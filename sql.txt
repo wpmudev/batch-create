@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS `wp_batch_create_queue` (
+  `batch_create_ID` bigint(20) unsigned NOT NULL auto_increment,
+  `batch_create_site` bigint(20),
+  `batch_create_blog_name` varchar(255) NOT NULL default 'null',
+  `batch_create_blog_title` varchar(255) NOT NULL default 'null',
+  `batch_create_user_name` varchar(255) NOT NULL default 'null',
+  `batch_create_user_pass` varchar(255) NOT NULL default 'null',
+  `batch_create_user_email` varchar(255) NOT NULL default 'null',
+  PRIMARY KEY  (`batch_create_ID`)
+) ENGINE=MyISAM;
