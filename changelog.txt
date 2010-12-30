@@ -1,9 +1,20 @@
 Plugin Name: Batch Create
-Author: Andrew Billits
+Author: Andrew Billits, Ulrich Sossou
 
 Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
+
+1.1 - 12/30/2010
+----------------------------------------------------------------------
+- New feature: allows addition of users to existing blogs
+- New feature: allows choosing the role of users
+- Enhancement: support for .csv and .xls files
+- Enhancement: internationalization
+- Enhancement: compatibility with WordPress 2.8 - 3.1
+- Enhancement: log plugin actions in a file when queue is processed
+- Enhancement: admin page rewrite so that it works correctly without js enabled
+- Enhancement: rewrite code per our coding standards
 
 1.0.1 - 06/01/2010
 ----------------------------------------------------------------------
