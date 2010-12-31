@@ -4,6 +4,7 @@ Author: Andrew Billits
 Files:
 ----------------------------------------------------------------------
 batch-create.php - goes in /wp-content/mu-plugins
+batch-create-files - goes in /wp-content/mu-plugins
 
 Instructions:
 ----------------------------------------------------------------------

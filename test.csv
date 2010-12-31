@@ -1,3 +1,3 @@
-"demoblogname1","Demo Blog Title 1","username1","userpass1","useremail@domain.com"
-"demoblogname2","Demo Blog Title 2","username2",,"useremail2@domain.com"
-,,"username3","userpass3","useremail3@domain.com"
+demoblogname1,Demo Blog Title 1,username1,userpass1,useremail@domain.com
+demoblogname2,Demo Blog Title 2,username2,,useremail2@domain.com,editor
+,,username3,userpass3,useremail3@domain.com

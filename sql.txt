@@ -6,5 +6,6 @@ CREATE TABLE IF NOT EXISTS `wp_batch_create_queue` (
   `batch_create_user_name` varchar(255) NOT NULL default 'null',
   `batch_create_user_pass` varchar(255) NOT NULL default 'null',
   `batch_create_user_email` varchar(255) NOT NULL default 'null',
+  `batch_create_user_role` varchar(255) NOT NULL default 'null',
   PRIMARY KEY  (`batch_create_ID`)
 ) ENGINE=MyISAM;

@@ -5,7 +5,7 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
-1.1 - 12/30/2010
+1.1 - 12/31/2010
 ----------------------------------------------------------------------
 - New feature: allows addition of users to existing blogs
 - New feature: allows choosing the role of users
@@ -15,6 +15,8 @@ Change Log:
 - Enhancement: log plugin actions in a file when queue is processed
 - Enhancement: admin page rewrite so that it works correctly without js enabled
 - Enhancement: rewrite code per our coding standards
+- Enhancement: example files
+- Enhancement: updated install and sql files
 
 1.0.1 - 06/01/2010
 ----------------------------------------------------------------------
