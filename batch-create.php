@@ -5,7 +5,8 @@ Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: Andrew Billits, Ulrich Sossou
 Version: 1.1.0
-Author URI:
+Network: true
+Author URI: http://premium.wpmudev.org/
 Text Domain: batch_create
 WDP ID: 84
 */
@@ -32,49 +33,42 @@ class batch_create {
 	/**
 	 * @var string $version Stores version number
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
-	var $version = '1.2.0';
-
-	/**
-	 * @var string $textdomain Domain used for localization
-	 *
-	 * Since Batch Create 1.2.0
-	 */
-	var $textdomain = 'batch_create';
+	var $version = '1.1.0';
 
 	/**
 	 * @var string $target_path Files upload directory
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	var $target_path = '';
 
 	/**
 	 * @var string $log_file File were processing output is logged
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	var $log_file = '';
 
 	/**
 	 * @var string $log_file_url URL to access log file via the browser
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	var $log_file_url = '';
 
 	/**
 	 * @var string $topmenu Menu item which the plugin page will be added under
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	var $topmenu = '';
 
 	/**
 	 * PHP5 contructor
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function __construct() {
 		global $wp_version;
@@ -85,19 +79,15 @@ class batch_create {
 		$this->log_file = $this->target_path . 'batch_create.log';
 		$this->log_file_url = $upload_dir['baseurl'] . '/batch-create/batch_create.log';
 
-		$wp_3_1_plus = version_compare( $wp_version , '3.1', '>=' );
-		$wp_2_9_less = version_compare( $wp_version , '3.0', '<' );
-
 		add_action( 'admin_notices', array( &$this, 'admin_notices' ) );
 		add_action( 'admin_init', array( &$this, 'admin_init' ) );
 		add_action( 'admin_init', array( &$this, 'make_current' ) );
 
-		if( $wp_3_1_plus )
-			$admin_menu = 'network_admin_menu';
-		else
-			$admin_menu = 'admin_menu';
+		add_action( 'network_admin_menu', array( &$this, 'plug_pages' ) );
+		add_action( 'admin_menu', array( &$this, 'plug_pages' ) );
 
-		add_action( $admin_menu, array( &$this, 'plug_pages' ) );
+		$wp_3_1_plus = version_compare( $wp_version , '3.0.9', '>' );
+		$wp_2_9_less = version_compare( $wp_version , '3.0', '<' );
 
 		if( $wp_2_9_less )
 			$this->topmenu = 'wpmu-admin.php';
@@ -105,17 +95,29 @@ class batch_create {
 			$this->topmenu = 'settings.php';
 		else
 			$this->topmenu = 'ms-admin.php';
+
+		// load text domain
+		if ( defined( 'WPMU_PLUGIN_DIR' ) && file_exists( WPMU_PLUGIN_DIR . '/batch-create.php' ) ) {
+			load_muplugin_textdomain( 'batch_create', 'batch-create-files/languages' );
+		} else {
+			load_plugin_textdomain( 'batch_create', false, dirname( plugin_basename( __FILE__ ) ) . '/batch-create-files/languages' );
+		}
 	}
 
 	/**
 	 * PHP4 contructor
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function batch_create() {
 		$this->__construct();
 	}
 
+	/**
+	 * Return admin URL relative to plugin page
+	 *
+	 * Since Batch Create 1.1.0
+	 */
 	function admin_url( $page ) {
 		return admin_url( $this->topmenu . $page );
 	}
@@ -123,38 +125,32 @@ class batch_create {
 	/**
 	 * Update plugin version
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function make_current() {
 		$page = isset( $_GET['page'] ) ? $_GET['page'] : '';
 		if( 'batch-create' !== $page )
 			return;
 
-		if ( get_site_option( 'batch_create_version' ) == '' ) {
-			add_site_option( 'batch_create_version', '0.0.0' );
-		}
-
-		if ( get_site_option( 'batch_create_version' ) !== $this->version ) {
-			//update to current version
-			update_site_option( 'batch_create_installed', 'no' );
-			update_site_option( 'batch_create_version', $this->version );
-		}
 		$this->global_install();
 
-		if ( get_option( 'batch_create_version' ) == '' ) {
-			add_option( 'batch_create_version', '0.0.0' );
-		}
+		if ( get_site_option( 'batch_create_version' ) == '' )
+			add_site_option( 'batch_create_version', $this->version );
 
-		if ( get_option( 'batch_create_version' ) !== $this->version ) {
-			//update to current version
+		if ( get_site_option( 'batch_create_version' ) !== $this->version )
+			update_site_option( 'batch_create_version', $this->version );
+
+		if ( get_option( 'batch_create_version' ) == '' )
+			add_option( 'batch_create_version', $this->version );
+
+		if ( get_option( 'batch_create_version' ) !== $this->version )
 			update_option( 'batch_create_version', $this->version );
-		}
 	}
 
 	/**
 	 * Create necessary tables
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function global_install() {
 		global $wpdb;
@@ -162,7 +158,7 @@ class batch_create {
 		if ( get_site_option( 'batch_create_installed' ) == '' )
 			add_site_option( 'batch_create_installed', 'no' );
 
-		if ( get_site_option( 'batch_create_installed' ) !== 'yes' || version_compare( get_site_option( 'batch_create_version' ), '1.2.0', '<' ) ) {
+		if ( get_site_option( 'batch_create_installed' ) !== 'yes' || version_compare( get_site_option( 'batch_create_version' ), '1.1.0', '<' ) ) {
 
 			if( @is_file( ABSPATH . '/wp-admin/includes/upgrade.php' ) )
 				include_once( ABSPATH . '/wp-admin/includes/upgrade.php' );
@@ -199,8 +195,8 @@ class batch_create {
 
 			}
 
-			// upgrade for 1.2.0
-			if( version_compare( get_site_option( 'batch_create_version' ), '1.2.0', '<' ) ) {
+			// upgrade for 1.1.0
+			if( version_compare( get_site_option( 'batch_create_version' ), '1.1.0', '<' ) ) {
 
 				maybe_add_column( "{$wpdb->base_prefix}batch_create_queue", 'batch_create_user_role', "ALTER TABLE {$wpdb->base_prefix}batch_create_queue ADD `batch_create_user_role `varchar(255) NOT NULL default 'null';" );
 
@@ -213,7 +209,7 @@ class batch_create {
 	/**
 	 * Create upload directory or display admin notice
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function admin_notices() {
 		if ( ! is_dir( $this->target_path ) ) {
@@ -230,16 +226,16 @@ class batch_create {
 	/**
 	 * Add admin page
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function plug_pages() {
-		add_submenu_page( $this->topmenu, 'Batch Create', 'Batch Create', 'manage_network_options', 'batch-create', array( &$this, 'page_main_output' ) );
+		add_submenu_page( $this->topmenu, __( 'Batch Create', 'batch_create' ), __( 'Batch Create', 'batch_create' ), 'manage_network_options', 'batch-create', array( &$this, 'page_main_output' ) );
 	}
 
 	/**
 	 * Add entry into the database
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function queue_insert( $args ) {
 		global $wpdb, $current_site;
@@ -259,7 +255,7 @@ class batch_create {
 	/**
 	 * Delete entry from database
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function queue_remove( $batch_create_id ) {
 		global $wpdb, $current_site;
@@ -270,7 +266,7 @@ class batch_create {
 	/**
 	 * Clear all entries from database
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function queue_clear() {
 		global $wpdb, $current_site;
@@ -281,7 +277,7 @@ class batch_create {
 	/**
 	 * Create blog and/or user from database entry
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function process_queue( $args ) {
 		global $wpdb, $current_site, $current_user;
@@ -315,7 +311,7 @@ class batch_create {
 
 			$user_id = wpmu_create_user( $batch_create_user_name, $batch_create_user_pass,  $batch_create_user_email );
 			if( false == $user_id ) {
-				die( __( '<p>There was an error creating a user</p>', 'batch_create' ) );
+				die( '<p>' . __( 'There was an error creating a user', 'batch_create' ) . '</p>' );
 			} else {
 				wp_new_user_notification( $user_id, $batch_create_user_pass );
 				$this->log( "User: $batch_create_user_name created!" );
@@ -352,7 +348,7 @@ class batch_create {
 	/**
 	 * Create blog and/or user from database entry
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function page_main_output() {
 		global $wpdb, $wp_roles, $current_user, $current_site;
@@ -387,7 +383,7 @@ class batch_create {
 	/**
 	 * Execute actions
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function admin_init() {
 		$page = isset( $_GET[ 'page' ] ) ? $_GET[ 'page' ] : '';
@@ -533,16 +529,16 @@ class batch_create {
 	/**
 	 * User Instructions
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function instructions() {
-		 _e( " <h3>Detailed Instructions</h3> <p> BLOG_NAME,BLOG_TITLE,USER_NAME,USER_PASS,USER_EMAIL,USER_ROLE<br /><br /> BLOG_NAME = The name of the blog you want created or the user added to (if that blog already exists). If you do not want the user to have a blog, please set this to 'null' without the quotation marks. No spaces allowed.<br /><br /> BLOG_TITLE = The title of the blog. This can be changed later.<br /><br /> USER_NAME = The name of the user. No spaces allowed.<br /><br /> USER_PASS = If you would like a password auto-generated please set this to 'null' without the quotation marks. No spaces allowed.<br /><br /> USER_EMAIL = You must provide a valid email for each user<br /><br /> USER_ROLE = The user role (when the user is added to an existing blog).<br /><br /> Examples:<br /><br /> User with blog and preset password:<br /> demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain.com<br /><br /> User with blog and auto-generated password:<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain.com<br /><br /> User without blog:<br /> null,null,username3,userpass3,useremail3@domain.com<br /><br /> User added to existing blog:<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /><br /> Together in a file these would look like:<br /><br /> demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain.com<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain.com<br /> null,null,username3,userpass3,useremail3@domain.com<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /> </p> <p> <strong>Please Note</strong><br /><br /> Spam filters, especially strict ones for institutional email addresses, may well block username and login information from reaching users.<br /><br /> In this case you should either try to use free webmail accounts that won't block the emails (such as gmail.com, hotmail.com or mail.yahoo.com) or preset passwords.<br /><br /> If your users do not have email accounts you can still set them up using a gmail.com address and adding a number for each different user. For example: myname+1@gmail.com, myname+2@gmail.com, myname+3@gmail.com<br /><br /> The system will treat each of these as a separate email account but they will all arrive at myname@gmail.com.</p> ", 'batch_create' );
+		 _e( '<h3>Detailed Instructions</h3> <p>BLOG_NAME,BLOG_TITLE,USER_NAME,USER_PASS,USER_EMAIL,USER_ROLE<br /><br /> BLOG_NAME = The name of the blog you want created or the user added to (if that blog already exists). If you do not want the user to have a blog, please set this to 'null' without the quotation marks. No spaces allowed.<br /><br /> BLOG_TITLE = The title of the blog. This can be changed later.<br /><br /> USER_NAME = The name of the user. No spaces allowed.<br /><br /> USER_PASS = If you would like a password auto-generated please set this to 'null' without the quotation marks. No spaces allowed.<br /><br /> USER_EMAIL = You must provide a valid email for each user<br /><br /> USER_ROLE = The user role (when the user is added to an existing blog).<br /><br /> Examples:<br /><br /> User with blog and preset password:<br /> demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain.com<br /><br /> User with blog and auto-generated password:<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain.com<br /><br /> User without blog:<br /> null,null,username3,userpass3,useremail3@domain.com<br /><br /> User added to existing blog:<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /><br /> Together in a file these would look like:<br /><br /> demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain.com<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain.com<br /> null,null,username3,userpass3,useremail3@domain.com<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /> </p> <p> <strong>Please Note</strong><br /><br /> Spam filters, especially strict ones for institutional email addresses, may well block username and login information from reaching users.<br /><br /> In this case you should either try to use free webmail accounts that won\'t block the emails (such as gmail.com, hotmail.com or mail.yahoo.com) or preset passwords.<br /><br /> If your users do not have email accounts you can still set them up using a gmail.com address and adding a number for each different user. For example: myname+1@gmail.com, myname+2@gmail.com, myname+3@gmail.com<br /><br /> The system will treat each of these as a separate email account but they will all arrive at myname@gmail.com.</p>', 'batch_create' );
 	}
 
 	/**
 	 * User Instructions
 	 *
-	 * Since Batch Create 1.2.0
+	 * Since Batch Create 1.1.0
 	 */
 	function log( $message ) {
 		error_log( date_i18n( 'Y-m-d H:i:s' ) . " - $message\n", 3, $this->log_file );
@@ -551,3 +547,16 @@ class batch_create {
 }
 
 $batch_create = new batch_create();
+
+/**
+ * Show notification if WPMUDEV Update Notifications plugin is not installed
+ **/
+if ( !function_exists( 'wdp_un_check' ) ) {
+	add_action( 'admin_notices', 'wdp_un_check', 5 );
+	add_action( 'network_admin_notices', 'wdp_un_check', 5 );
+
+	function wdp_un_check() {
+		if ( !class_exists( 'WPMUDEV_Update_Notifications' ) && current_user_can( 'edit_users' ) )
+			echo '<div class="error fade"><p>' . __('Please install the latest version of <a href="http://premium.wpmudev.org/project/update-notifications/" title="Download Now &raquo;">our free Update Notifications plugin</a> which helps you stay up-to-date with the most stable, secure versions of WPMU DEV themes and plugins. <a href="http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-information/">More information &raquo;</a>', 'wpmudev') . '</a></p></div>';
+	}
+}

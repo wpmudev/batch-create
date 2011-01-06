@@ -1,15 +1,15 @@
-# Translation of the WordPress plugin Batch Create 1.2.0 by Andrew Billits, Ulrich Sossou.
-# Copyright (C) 2010 Andrew Billits, Ulrich Sossou
+# Translation of the WordPress plugin Batch Create 1.1.0 by Andrew Billits, Ulrich Sossou.
+# Copyright (C) 2011 Andrew Billits, Ulrich Sossou
 # This file is distributed under the same license as the Batch Create package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2010.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2011.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: Batch Create 1.2.0\n"
+"Project-Id-Version: Batch Create 1.1.0\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/batch-create\n"
-"POT-Creation-Date: 2010-12-14 11:53+0100\n"
-"PO-Revision-Date: 2010-MO-DA HO:MI+ZONE\n"
+"POT-Creation-Date: 2011-01-06 16:21+0100\n"
+"PO-Revision-Date: 2011-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -17,47 +17,47 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: batch-create.php:159
+#: batch-create.php:166
 msgid ""
 "We have problem finding your '/wp-admin/upgrade-functions.php' and '/wp-"
 "admin/includes/upgrade.php'"
 msgstr ""
 
-#: batch-create.php:210
+#: batch-create.php:217
 #, php-format
 msgid ""
 "<div class=\"error\"><p>Unable to create directory %s. Is its parent "
 "directory writable by the server?</p></div>"
 msgstr ""
 
-#: batch-create.php:213
+#: batch-create.php:220
 #, php-format
 msgid ""
 "<div class=\"error\"><p>Unable to create log file %s. Is its parent "
 "directory writable by the server?</p></div>"
 msgstr ""
 
-#: batch-create.php:307
-msgid "<p>There was an error creating a user</p>"
+#. #-#-#-#-#  batch-create.pot (Batch Create 1.1.0)  #-#-#-#-#
+#. Plugin Name of the plugin/theme
+#: batch-create.php:232 batch-create.php:362
+msgid "Batch Create"
 msgstr ""
 
-#: batch-create.php:329
+#: batch-create.php:314
+msgid "There was an error creating a user"
+msgstr ""
+
+#: batch-create.php:336
 #, php-format
 msgid "New blog created by %1s\\n\\nAddress: http://%2s\\nName: %3s"
 msgstr ""
 
-#: batch-create.php:330
+#: batch-create.php:337
 #, php-format
 msgid "[%s] New Blog Created"
 msgstr ""
 
-#. #-#-#-#-#  batch-create.pot (Batch Create 1.2.0)  #-#-#-#-#
-#. Plugin Name of the plugin/theme
-#: batch-create.php:355
-msgid "Batch Create"
-msgstr ""
-
-#: batch-create.php:357
+#: batch-create.php:364
 #, php-format
 msgid ""
 "<p><strong>Note:</strong> There are %1$d items (blogs/users) waiting to be "
@@ -65,81 +65,63 @@ msgid ""
 "a problem, you can clear the queue by clicking <a href=\"%3$s\">here</a>.</p>"
 msgstr ""
 
-#: batch-create.php:361
+#: batch-create.php:368
 msgid ""
 "Use the form below to upload a <a href=\"http://en.wikipedia.org/wiki/Comma-"
 "separated_values\">.csv</a> or a .xls file."
 msgstr ""
 
-#: batch-create.php:367
+#: batch-create.php:374
 msgid "Upload &raquo;"
 msgstr ""
 
-#: batch-create.php:400
+#: batch-create.php:407
 msgid "There was an error uploading the file, please try again!"
 msgstr ""
 
-#: batch-create.php:409
+#: batch-create.php:416
 msgid ""
 "The file type you uploaded is not supported. Please upload a .csv or .xls "
 "file."
 msgstr ""
 
-#: batch-create.php:416
+#: batch-create.php:423
 msgid "Error reading the uploaded file."
 msgstr ""
 
-#: batch-create.php:463
+#: batch-create.php:470
 msgid "No data was retrieved from the file. Please verify its content."
 msgstr ""
 
-#: batch-create.php:468
+#: batch-create.php:475
 msgid "Items added to queue."
 msgstr ""
 
-#: batch-create.php:488
+#: batch-create.php:495
 #, php-format
 msgid "Queue processing complete. <a href=\"%s\">See log file.</a>"
 msgstr ""
 
-#: batch-create.php:512
+#: batch-create.php:519
 msgid "Queue cleared."
 msgstr ""
 
-#: batch-create.php:528
+#: batch-create.php:535
 msgid ""
-" <h3>Detailed Instructions</h3> <p> BLOG_NAME,BLOG_TITLE,USER_NAME,USER_PASS,"
+"<h3>Detailed Instructions</h3> <p>BLOG_NAME,BLOG_TITLE,USER_NAME,USER_PASS,"
 "USER_EMAIL,USER_ROLE<br /><br /> BLOG_NAME = The name of the blog you want "
 "created or the user added to (if that blog already exists). If you do not "
-"want the user to have a blog, please set this to 'null' without the "
-"quotation marks. No spaces allowed.<br /><br /> BLOG_TITLE = The title of "
-"the blog. This can be changed later.<br /><br /> USER_NAME = The name of the "
-"user. No spaces allowed.<br /><br /> USER_PASS = If you would like a "
-"password auto-generated please set this to 'null' without the quotation "
-"marks. No spaces allowed.<br /><br /> USER_EMAIL = You must provide a valid "
-"email for each user<br /><br /> USER_ROLE = The user role (when the user is "
-"added to an existing blog).<br /><br /> Examples:<br /><br /> User with blog "
-"and preset password:<br /> demoblogname1,Demo Blog Title 1,username1,"
-"userpass1, useremail@domain.com<br /><br /> User with blog and auto-"
-"generated password:<br /> demoblogname2,Demo Blog Title 2,username2,null,"
-"useremail2@domain.com<br /><br /> User without blog:<br /> null,null,"
-"username3,userpass3,useremail3@domain.com<br /><br /> User added to existing "
-"blog:<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,"
-"editor<br /><br /> Together in a file these would look like:<br /><br /> "
-"demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain."
-"com<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain."
-"com<br /> null,null,username3,userpass3,useremail3@domain.com<br /> "
-"demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /> </"
-"p> <p> <strong>Please Note</strong><br /><br /> Spam filters, especially "
-"strict ones for institutional email addresses, may well block username and "
-"login information from reaching users.<br /><br /> In this case you should "
-"either try to use free webmail accounts that won't block the emails (such as "
-"gmail.com, hotmail.com or mail.yahoo.com) or preset passwords.<br /><br /> "
-"If your users do not have email accounts you can still set them up using a "
-"gmail.com address and adding a number for each different user. For example: "
-"myname+1@gmail.com, myname+2@gmail.com, myname+3@gmail.com<br /><br /> The "
-"system will treat each of these as a separate email account but they will "
-"all arrive at myname@gmail.com. </p> "
+"want the user to have a blog, please set this to "
+msgstr ""
+
+#: batch-create.php:560
+msgid ""
+"Please install the latest version of <a href=\"http://premium.wpmudev.org/"
+"project/update-notifications/\" title=\"Download Now &raquo;\">our free "
+"Update Notifications plugin</a> which helps you stay up-to-date with the "
+"most stable, secure versions of WPMU DEV themes and plugins. <a href="
+"\"http://premium.wpmudev.org/wpmu-dev/update-notifications-plugin-"
+"information/\">More information &raquo;</a>"
 msgstr ""
 
 #. Plugin URI of the plugin/theme
@@ -155,4 +137,8 @@ msgstr ""
 
 #. Author of the plugin/theme
 msgid "Andrew Billits, Ulrich Sossou"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://premium.wpmudev.org/"
 msgstr ""
