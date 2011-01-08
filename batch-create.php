@@ -28,8 +28,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-if( !is_multisite() )
-	exit( 'The Blog Activity plugin is only compatible with WordPress Multisite.' );
+if ( !is_multisite() )
+	exit( 'The Blog Activity plugin is only compatible with WordPress Multisite.', 'batch_create' );
+
+if ( !defined( 'BATCH_CREATE_FOR_BLOG_ADMINS' ) )
+	define( 'BATCH_CREATE_FOR_BLOG_ADMINS', false );
 
 class batch_create {
 
@@ -86,18 +89,27 @@ class batch_create {
 		add_action( 'admin_init', array( &$this, 'admin_init' ) );
 		add_action( 'admin_init', array( &$this, 'make_current' ) );
 
-		add_action( 'network_admin_menu', array( &$this, 'plug_pages' ) );
-		add_action( 'admin_menu', array( &$this, 'plug_pages' ) );
+		// add admin menus
+		if( BATCH_CREATE_FOR_BLOG_ADMINS ) {
+			add_action( 'admin_menu', array( &$this, 'plug_pages' ) );
+			$this->topmenu = 'tools.php';
+			$this->capability = 'manage_options';
+		} else {
+			add_action( 'network_admin_menu', array( &$this, 'plug_pages' ) );
+			add_action( 'admin_menu', array( &$this, 'plug_pages' ) );
 
-		$wp_3_1_plus = version_compare( $wp_version , '3.0.9', '>' );
-		$wp_2_9_less = version_compare( $wp_version , '3.0', '<' );
+			$wp_3_1_plus = version_compare( $wp_version , '3.0.9', '>' );
+			$wp_2_9_less = version_compare( $wp_version , '3.0', '<' );
 
-		if( $wp_2_9_less )
-			$this->topmenu = 'wpmu-admin.php';
-		elseif( $wp_3_1_plus )
-			$this->topmenu = 'settings.php';
-		else
-			$this->topmenu = 'ms-admin.php';
+			if( $wp_2_9_less )
+				$this->topmenu = 'wpmu-admin.php';
+			elseif( $wp_3_1_plus )
+				$this->topmenu = 'settings.php';
+			else
+				$this->topmenu = 'ms-admin.php';
+
+			$this->capability = 'manage_network_options';
+		}
 
 		// load text domain
 		if ( defined( 'WPMU_PLUGIN_DIR' ) && file_exists( WPMU_PLUGIN_DIR . '/batch-create.php' ) ) {
@@ -131,17 +143,20 @@ class batch_create {
 	 * Since Batch Create 1.1.0
 	 */
 	function make_current() {
-		$page = isset( $_GET['page'] ) ? $_GET['page'] : '';
-		if( 'batch-create' !== $page )
+		global $plugin_page;
+
+		if( 'batch-create' !== $plugin_page )
 			return;
 
-		$this->global_install();
-
 		if ( get_site_option( 'batch_create_version' ) == '' )
-			add_site_option( 'batch_create_version', $this->version );
+			add_site_option( 'batch_create_version', '0.0.0' );
 
-		if ( get_site_option( 'batch_create_version' ) !== $this->version )
+		if ( get_site_option( 'batch_create_version' ) !== $this->version ) {
 			update_site_option( 'batch_create_version', $this->version );
+			update_site_option( 'batch_create_installed', 'no' );
+		}
+
+		$this->global_install();
 
 		if ( get_option( 'batch_create_version' ) == '' )
 			add_option( 'batch_create_version', $this->version );
@@ -161,49 +176,41 @@ class batch_create {
 		if ( get_site_option( 'batch_create_installed' ) == '' )
 			add_site_option( 'batch_create_installed', 'no' );
 
-		if ( get_site_option( 'batch_create_installed' ) !== 'yes' || version_compare( get_site_option( 'batch_create_version' ), '1.1.0', '<' ) ) {
+		if ( get_site_option( 'batch_create_installed' ) !== 'yes' ) {
 
 			if( @is_file( ABSPATH . '/wp-admin/includes/upgrade.php' ) )
 				include_once( ABSPATH . '/wp-admin/includes/upgrade.php' );
 			else
 				die( __( 'We have problem finding your \'/wp-admin/upgrade-functions.php\' and \'/wp-admin/includes/upgrade.php\'', 'batch_create' ) );
 
-			if( get_site_option( 'batch_create_installed' ) !== 'yes' ) {
-
-				$charset_collate = '';
-				if( $wpdb->supports_collation() ) {
-					if( !empty( $wpdb->charset ) ) {
-						$charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
-					}
-					if( !empty( $wpdb->collate ) ) {
-						$charset_collate .= " COLLATE $wpdb->collate";
-					}
+			$charset_collate = '';
+			if( $wpdb->supports_collation() ) {
+				if( !empty( $wpdb->charset ) ) {
+					$charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
 				}
-
-				$batch_create_table = "CREATE TABLE `{$wpdb->base_prefix}batch_create_queue` (
-					`batch_create_ID` bigint(20) unsigned NOT NULL auto_increment,
-					`batch_create_site` bigint(20),
-					`batch_create_blog_name` varchar(255) NOT NULL default 'null',
-					`batch_create_blog_title` varchar(255) NOT NULL default 'null',
-					`batch_create_user_name` varchar(255) NOT NULL default 'null',
-					`batch_create_user_pass` varchar(255) NOT NULL default 'null',
-					`batch_create_user_email` varchar(255) NOT NULL default 'null',
-					`batch_create_user_role` varchar(255) NOT NULL default 'null',
-					PRIMARY KEY  (`batch_create_ID`)
-				) $charset_collate;";
-
-				maybe_create_table( "{$wpdb->base_prefix}batch_create_queue", $batch_create_table );
-
-				update_site_option( 'batch_create_installed', 'yes' );
-
+				if( !empty( $wpdb->collate ) ) {
+					$charset_collate .= " COLLATE $wpdb->collate";
+				}
 			}
 
-			// upgrade for 1.1.0
-			if( version_compare( get_site_option( 'batch_create_version' ), '1.1.0', '<' ) ) {
+			$batch_create_table = "CREATE TABLE `{$wpdb->base_prefix}batch_create_queue` (
+				`batch_create_ID` bigint(20) unsigned NOT NULL auto_increment,
+				`batch_create_site` bigint(20),
+				`batch_create_blog_name` varchar(255) NOT NULL default 'null',
+				`batch_create_blog_title` varchar(255) NOT NULL default 'null',
+				`batch_create_user_name` varchar(255) NOT NULL default 'null',
+				`batch_create_user_pass` varchar(255) NOT NULL default 'null',
+				`batch_create_user_email` varchar(255) NOT NULL default 'null',
+				`batch_create_user_role` varchar(255) NOT NULL default 'null',
+				PRIMARY KEY  (`batch_create_ID`)
+			) $charset_collate;";
 
-				maybe_add_column( "{$wpdb->base_prefix}batch_create_queue", 'batch_create_user_role', "ALTER TABLE {$wpdb->base_prefix}batch_create_queue ADD `batch_create_user_role `varchar(255) NOT NULL default 'null';" );
+			maybe_create_table( "{$wpdb->base_prefix}batch_create_queue", $batch_create_table );
 
-			}
+			// upgrade from versions < 1.1.0
+			maybe_add_column( "{$wpdb->base_prefix}batch_create_queue", 'batch_create_user_role', "ALTER TABLE {$wpdb->base_prefix}batch_create_queue ADD `batch_create_user_role `varchar(255) NOT NULL default 'null';" );
+
+			update_site_option( 'batch_create_installed', 'yes' );
 
 		}
 
@@ -232,7 +239,7 @@ class batch_create {
 	 * Since Batch Create 1.1.0
 	 */
 	function plug_pages() {
-		add_submenu_page( $this->topmenu, __( 'Batch Create', 'batch_create' ), __( 'Batch Create', 'batch_create' ), 'manage_network_options', 'batch-create', array( &$this, 'page_main_output' ) );
+		add_submenu_page( $this->topmenu, __( 'Batch Create', 'batch_create' ), __( 'Batch Create', 'batch_create' ), $this->capability, 'batch-create', array( &$this, 'page_main_output' ) );
 	}
 
 	/**
@@ -355,6 +362,11 @@ class batch_create {
 	 */
 	function page_main_output() {
 		global $wpdb, $wp_roles, $current_user, $current_site;
+
+		if( !current_user_can( $this->capability ) ) {
+			echo '<p>' . __( 'Nice Try...', 'batch_create' ) . '</p>'; // If accessed properly, this message doesn't appear.
+			return;
+		}
 
 		if ( isset( $_GET['updated'] ) )
 			echo '<div id="message" class="updated fade"><p>' . stripslashes( urldecode( $_GET['updatedmsg'] ) ) . '</p></div>';
@@ -535,7 +547,7 @@ class batch_create {
 	 * Since Batch Create 1.1.0
 	 */
 	function instructions() {
-		 _e( '<h3>Detailed Instructions</h3> <p>BLOG_NAME,BLOG_TITLE,USER_NAME,USER_PASS,USER_EMAIL,USER_ROLE<br /><br /> BLOG_NAME = The name of the blog you want created or the user added to (if that blog already exists). If you do not want the user to have a blog, please set this to 'null' without the quotation marks. No spaces allowed.<br /><br /> BLOG_TITLE = The title of the blog. This can be changed later.<br /><br /> USER_NAME = The name of the user. No spaces allowed.<br /><br /> USER_PASS = If you would like a password auto-generated please set this to 'null' without the quotation marks. No spaces allowed.<br /><br /> USER_EMAIL = You must provide a valid email for each user<br /><br /> USER_ROLE = The user role (when the user is added to an existing blog).<br /><br /> Examples:<br /><br /> User with blog and preset password:<br /> demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain.com<br /><br /> User with blog and auto-generated password:<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain.com<br /><br /> User without blog:<br /> null,null,username3,userpass3,useremail3@domain.com<br /><br /> User added to existing blog:<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /><br /> Together in a file these would look like:<br /><br /> demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain.com<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain.com<br /> null,null,username3,userpass3,useremail3@domain.com<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /> </p> <p> <strong>Please Note</strong><br /><br /> Spam filters, especially strict ones for institutional email addresses, may well block username and login information from reaching users.<br /><br /> In this case you should either try to use free webmail accounts that won\'t block the emails (such as gmail.com, hotmail.com or mail.yahoo.com) or preset passwords.<br /><br /> If your users do not have email accounts you can still set them up using a gmail.com address and adding a number for each different user. For example: myname+1@gmail.com, myname+2@gmail.com, myname+3@gmail.com<br /><br /> The system will treat each of these as a separate email account but they will all arrive at myname@gmail.com.</p>', 'batch_create' );
+		 _e( '<h3>Detailed Instructions</h3> <p>BLOG_NAME,BLOG_TITLE,USER_NAME,USER_PASS,USER_EMAIL,USER_ROLE<br /><br /> BLOG_NAME = The name of the blog you want created or the user added to (if that blog already exists). If you do not want the user to have a blog, please set this to \'null\' without the quotation marks. No spaces allowed.<br /><br /> BLOG_TITLE = The title of the blog. This can be changed later.<br /><br /> USER_NAME = The name of the user. No spaces allowed.<br /><br /> USER_PASS = If you would like a password auto-generated please set this to \'null\' without the quotation marks. No spaces allowed.<br /><br /> USER_EMAIL = You must provide a valid email for each user<br /><br /> USER_ROLE = The user role (when the user is added to an existing blog).<br /><br /> Examples:<br /><br /> User with blog and preset password:<br /> demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain.com<br /><br /> User with blog and auto-generated password:<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain.com<br /><br /> User without blog:<br /> null,null,username3,userpass3,useremail3@domain.com<br /><br /> User added to existing blog:<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /><br /> Together in a file these would look like:<br /><br /> demoblogname1,Demo Blog Title 1,username1,userpass1, useremail@domain.com<br /> demoblogname2,Demo Blog Title 2,username2,null,useremail2@domain.com<br /> null,null,username3,userpass3,useremail3@domain.com<br /> demoblogname4,null,username4,userpass4,useremail4@domain.com,editor<br /> </p> <p> <strong>Please Note</strong><br /><br /> Spam filters, especially strict ones for institutional email addresses, may well block username and login information from reaching users.<br /><br /> In this case you should either try to use free webmail accounts that won\'t block the emails (such as gmail.com, hotmail.com or mail.yahoo.com) or preset passwords.<br /><br /> If your users do not have email accounts you can still set them up using a gmail.com address and adding a number for each different user. For example: myname+1@gmail.com, myname+2@gmail.com, myname+3@gmail.com<br /><br /> The system will treat each of these as a separate email account but they will all arrive at myname@gmail.com.</p>', 'batch_create' );
 	}
 
 	/**
