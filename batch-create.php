@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 if ( !is_multisite() )
-	exit( 'The Blog Activity plugin is only compatible with WordPress Multisite.', 'batch_create' );
+	exit( __( 'The Batch Create plugin is only compatible with WordPress Multisite.', 'batch_create' ) );
 
 if ( !defined( 'BATCH_CREATE_FOR_BLOG_ADMINS' ) )
 	define( 'BATCH_CREATE_FOR_BLOG_ADMINS', false );
