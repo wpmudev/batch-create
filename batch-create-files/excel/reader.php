@@ -27,7 +27,7 @@
 */
 
 
-require_once WPMU_PLUGIN_DIR . '/batch-create-files/excel/oleread.php';
+require( BATCH_CREATE_PLUGIN_DIR . 'excel/oleread.php' );
 
 define('SPREADSHEET_EXCEL_READER_BIFF8',             0x600);
 define('SPREADSHEET_EXCEL_READER_BIFF7',             0x500);

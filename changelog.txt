@@ -18,6 +18,7 @@ Change Log:
 - Enhancement: example files
 - Enhancement: updated install and sql files
 - Enhancement: better instructions on admin page
+- Enhancement: added progress bar
 
 1.0.1 - 06/01/2010
 ----------------------------------------------------------------------

@@ -12,7 +12,7 @@ WDP ID: 84
 */
 
 /*
-Copyright 2007-2009 Incsub (http://incsub.com)
+Copyright 2007-2011 Incsub (http://incsub.com)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License (Version 2 - GPLv2) as published by
@@ -33,6 +33,9 @@ if ( !is_multisite() )
 
 if ( !defined( 'BATCH_CREATE_FOR_BLOG_ADMINS' ) )
 	define( 'BATCH_CREATE_FOR_BLOG_ADMINS', false );
+
+define( 'BATCH_CREATE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) . 'batch-create-files/' );
+define( 'BATCH_CREATE_PLUGIN_URL', plugin_dir_url( __FILE__ ) . 'batch-create-files/' );
 
 class batch_create {
 
@@ -88,6 +91,8 @@ class batch_create {
 		add_action( 'admin_notices', array( &$this, 'admin_notices' ) );
 		add_action( 'admin_init', array( &$this, 'admin_init' ) );
 		add_action( 'admin_init', array( &$this, 'make_current' ) );
+		add_action( 'admin_head', array( &$this, 'process_queue_javascript' ) );
+		add_action( 'wp_ajax_process_queue', array( &$this, 'process_queue' ) );
 
 		// add admin menus
 		if( BATCH_CREATE_FOR_BLOG_ADMINS ) {
@@ -126,15 +131,6 @@ class batch_create {
 	 */
 	function batch_create() {
 		$this->__construct();
-	}
-
-	/**
-	 * Return admin URL relative to plugin page
-	 *
-	 * Since Batch Create 1.1.0
-	 */
-	function admin_url( $page ) {
-		return admin_url( $this->topmenu . $page );
 	}
 
 	/**
@@ -289,9 +285,10 @@ class batch_create {
 	 *
 	 * Since Batch Create 1.1.0
 	 */
-	function process_queue( $args ) {
+	function process_queue() {
 		global $wpdb, $current_site, $current_user;
 
+		$args = $wpdb->get_row( $wpdb->prepare( "SELECT batch_create_ID, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_ID = %d LIMIT 1", $_POST['blog_id'] ), ARRAY_A );
 		extract( $args );
 
 		$blog_id = '';
@@ -331,7 +328,7 @@ class batch_create {
 		if ( ! in_array( $batch_create_blog_name, array( '', strtolower( 'null' ) ) ) ) {
 			$blog_id = get_id_from_blogname( $batch_create_blog_name );
 			if( !empty( $blog_id ) ) { // blog exists
-				if( add_user_to_blog( $blog_id, $user_id, $batch_create_user_role ) == true ) { // add user to blog
+				if( isset( $batch_create_user_role ) && add_user_to_blog( $blog_id, $user_id, $batch_create_user_role ) == true ) { // add user to blog
 					$this->log( "User $batch_create_user_name successfully added to blog {$tmp_blog_domain}{$tmp_blog_path}" );
 				} else {
 					$this->log( "Unable to add user $batch_create_user_name to blog {$tmp_blog_domain}{$tmp_blog_path}" );
@@ -340,7 +337,7 @@ class batch_create {
 		}
 
 		if ( empty( $blog_id ) && ( ! in_array( $batch_create_blog_name, array( '', strtolower( 'null' ) ) ) && ! in_array( $batch_create_blog_title, array( '', strtolower( 'null' ) ) ) ) ) { // create blog
-			$blog_id = wpmu_create_blog( $tmp_blog_domain, $tmp_blog_path, esc_html( $batch_create_blog_title ), $user_id , '', $current_site->id );
+			$blog_id = wpmu_create_blog( $tmp_blog_domain, $tmp_blog_path, esc_html( $batch_create_blog_title ), $user_id , 1, $current_site->id );
 
 			if( ! is_wp_error( $blog_id ) ) {
 				$content_mail = sprintf( __( 'New blog created by %1s\n\nAddress: http://%2s\nName: %3s', 'batch_create' ), $current_user->user_login , $tmp_blog_domain . $tmp_blog_path, esc_html( $batch_create_blog_title ) );
@@ -353,6 +350,13 @@ class batch_create {
 				$this->log( 'Error creating blog: ' . $tmp_blog_domain . $tmp_blog_path . ' - ' . $blog_id->get_error_message() );
 			}
 		}
+
+		$this->queue_remove( $batch_create_ID );
+
+		$query = $wpdb->prepare( "SELECT batch_create_ID FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d LIMIT 1", $current_site->id );
+		$queue_item = $wpdb->get_var( $query );
+
+		die( $queue_item );
 	}
 
 	/**
@@ -376,14 +380,15 @@ class batch_create {
 
 			echo '<h2>' . __( 'Batch Create', 'batch_create' ) . '</h2>';
 			if ( $tmp_queue_count_count > 0 )
-				printf( __( '<p><strong>Note:</strong> There are %1$d items (blogs/users) waiting to be processed. Click <a href="%2$s">here</a> to process the queue. If there is a problem, you can clear the queue by clicking <a href="%3$s">here</a>.</p>', 'batch_create' ), $tmp_queue_count_count, $this->admin_url( '?page=batch-create&action=loop' ), $this->admin_url( '?page=batch-create&action=clear' ) );
+				printf( __( '<p class="processing_result"><strong>Note:</strong> There are %d items (blogs/users) waiting to be processed. Click <a href="?page=batch-create&action=loop">here</a> to process the queue. If there is a problem, you can clear the queue by clicking <a href="?page=batch-create&action=clear">here</a>.</p>', 'batch_create' ), $tmp_queue_count_count );
 			?>
 
-			<form action="<?php echo $this->admin_url( '?page=batch-create&action=process' ); ?>" method="post" enctype="multipart/form-data">
+			<form action="?page=batch-create&action=process" method="post" enctype="multipart/form-data">
 				<p><?php _e( 'Use the form below to upload a <a href="http://en.wikipedia.org/wiki/Comma-separated_values">.csv</a> or a .xls file.', 'batch_create' ); ?></p>
 				<p>
 				  <input type="file" name="csv_file" id="csv_file" size="20" />
 				  <input type="hidden" name="max_file_size" value="100000" />
+				  <input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
 				</p>
 				<p class="submit">
 				  <input name="Submit" value="<?php _e( 'Upload &raquo;', 'batch_create' ) ?>" type="submit" />
@@ -393,6 +398,53 @@ class batch_create {
 			<?php
 			$this->instructions();
 		echo '</div>';
+	}
+
+	function process_queue_javascript() {
+		global $plugin_page, $wpdb, $current_site;
+
+		if ( ! ( 'batch-create' == $plugin_page && isset( $_GET['action'] ) && 'loop' == $_GET['action'] ) )
+			return;
+
+		$query = $wpdb->prepare( "SELECT batch_create_ID FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d LIMIT 1", $current_site->id );
+		$queue_item = $wpdb->get_var( $query );
+
+		$count_items = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d", $current_site->id ) );
+	?>
+	<script type="text/javascript" >
+	jQuery(function($) {
+		process_item(<?php echo $queue_item; ?>);
+		var rt_count = 0;
+		var rt_total = <?php echo $count_items; ?>;
+
+		function process_item(id) {
+			var data = {
+				action: 'process_queue',
+				blog_id: id
+			};
+
+			$.post(ajaxurl, data, function(response) {
+				if( '' !== response ) {
+					process_item(response);
+				}
+				rt_count = rt_count + 1;
+				$( '#progressbar' ).progressbar( 'value', ( rt_count / rt_total ) * 100 );
+			});
+		}
+
+		$('.processing_result')
+			.html('<div id="progressbar"></div>')
+			.ajaxStop(function() {
+				<?php $destination = add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( sprintf( __( 'Queue processing complete. <a href="%s">See log file.</a>', 'batch_create' ), $this->log_file_url ) ), remove_query_arg( 'action', $_SERVER['REQUEST_URI'] ) ) ); ?>
+				window.location = "<?php echo $destination; ?>";
+			});
+
+		$( '#progressbar' ).progressbar({
+			value: 1
+		});
+	});
+	</script>
+	<?php
 	}
 
 	/**
@@ -419,7 +471,7 @@ class batch_create {
 
 				if( ! move_uploaded_file( $_FILES['csv_file']['tmp_name'], $file_path ) ) { // file not moved in upload directory
 
-					wp_redirect( $this->admin_url( '?page=batch-create&updated=true&updatedmsg=' . urlencode( __( 'There was an error uploading the file, please try again!', 'batch_create' ) ) ) );
+					wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'There was an error uploading the file, please try again!', 'batch_create' ) ), wp_get_referer() ) ) );
 					die;
 
 				} else { // upload successful
@@ -428,14 +480,14 @@ class batch_create {
 
 					if( ! in_array( $file_extension, array( 'csv', 'xls' ) ) ) { // unsupported file extension
 
-						wp_redirect( $this->admin_url( '?page=batch-create&updated=true&updatedmsg=' . urlencode( __( 'The file type you uploaded is not supported. Please upload a .csv or .xls file.', 'batch_create' ) ) ) );
+						wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'The file type you uploaded is not supported. Please upload a .csv or .xls file.', 'batch_create' ) ), wp_get_referer() ) ) );
 						die;
 
 					} else { // supported file extension
 
 						if ( ( $handle = @fopen( $file_path, 'r' ) ) == false ) { // unable to open file
 
-							wp_redirect( $this->admin_url( '?page=batch-create&updated=true&updatedmsg=' . urlencode( __( 'Error reading the uploaded file.', 'batch_create' ) ) ) );
+							wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'Error reading the uploaded file.', 'batch_create' ) ), wp_get_referer() ) ) );
 
 						} else { // open file
 
@@ -453,7 +505,7 @@ class batch_create {
 
 								fclose( $handle );
 
-								require_once WPMU_PLUGIN_DIR . '/batch-create-files/excel/reader.php';
+								require( BATCH_CREATE_PLUGIN_DIR . 'excel/reader.php' );
 
 								$data = new Spreadsheet_Excel_Reader();
 								$data->setOutputEncoding( 'CP1251' );
@@ -462,7 +514,8 @@ class batch_create {
 								for ( $i = 1; $i <= $data->sheets[0]['numRows']; $i++ ) {
 									$tmp_cols = array();
 									for ( $j = 1; $j <= $data->sheets[0]['numCols']; $j++ ) {
-										$tmp_cols[] = $data->sheets[0]['cells'][$i][$j];
+										if( isset( $data->sheets[0]['cells'][$i][$j] ) )
+											$tmp_cols[] = $data->sheets[0]['cells'][$i][$j];
 									}
 									$tmp_new_blogs[] = $tmp_cols;
 								}
@@ -482,12 +535,12 @@ class batch_create {
 
 							} else {
 
-								wp_redirect( $this->admin_url( '?page=batch-create&updated=true&updatedmsg=' . urlencode( __( 'No data was retrieved from the file. Please verify its content.', 'batch_create' ) ) ) );
+								wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'No data was retrieved from the file. Please verify its content.', 'batch_create' ) ), wp_get_referer() ) ) );
 								die;
 
 							}
 
-							wp_redirect( $this->admin_url( '?page=batch-create&updated=true&updatedmsg=' . urlencode( __( 'Items added to queue.', 'batch_create' ) ) ) );
+							wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'Items added to queue.', 'batch_create' ) ), wp_get_referer() ) ) );
 							die;
 
 						}
@@ -498,40 +551,17 @@ class batch_create {
 			break;
 
 			case 'loop': // process queue
-				global $wpdb, $current_site;
+				if ( wp_script_is( 'jquery-ui-widget', 'registered' ) )
+					wp_enqueue_script( 'jquery-ui-progressbar', plugins_url( 'batch-create-files/js/jquery.ui.progressbar.min.js', __FILE__ ), array( 'jquery-ui-core', 'jquery-ui-widget' ), '1.8.7' );
+				else
+					wp_enqueue_script( 'jquery-ui-progressbar', plugins_url( 'batch-create-files/js/ui.progressbar.min.js', __FILE__ ), array( 'jquery-ui-core' ), '1.7.3' );
 
-				set_time_limit(0);
-
-				// get number of items from queue
-				$tmp_queue_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d", $current_site->id ) );
-
-				if ( $tmp_queue_count == 0 ) {
-
-					wp_redirect( $this->admin_url( '?page=batch-create&updated=true&updatedmsg=' . urlencode( sprintf( __( 'Queue processing complete. <a href="%s">See log file.</a>', 'batch_create' ), $this->log_file_url ) ) ) );
-					die;
-
-				} else {
-					//$this->log( "Creating blogs... Roughly $tmp_queue_count left to create." );
-
-					//------------------------------//
-					$query = $wpdb->prepare( "SELECT batch_create_ID, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d LIMIT 1", $current_site->id );
-					$batch_create_queue_items_list = $wpdb->get_results( $query, ARRAY_A );
-					//------------------------------//
-					if ( count( $batch_create_queue_items_list ) > 0 ) {
-						foreach( $batch_create_queue_items_list as $batch_create_queue_item ) {
-							$this->process_queue( $batch_create_queue_item );
-							$this->queue_remove( $batch_create_queue_item['batch_create_ID'] );
-						}
-					}
-
-					wp_redirect( $_SERVER['REQUEST_URI'] );
-					die;
-				}
+				wp_enqueue_style( 'jquery-ui-batchcreate', plugins_url( 'batch-create-files/css/jquery-ui-1.7.3.custom.css', __FILE__ ), array(), '1.7.3' );
 			break;
 
 			case 'clear':
 				$this->queue_clear();
-				wp_redirect( $this->admin_url( '?page=batch-create&updated=true&updatedmsg="' . urlencode( __( 'Queue cleared.', 'batch_create' ) ) ) );
+				wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'Queue cleared.', 'batch_create' ) ), wp_get_referer() ) ) );
 				exit;
 			break;
 
