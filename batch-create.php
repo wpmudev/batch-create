@@ -382,6 +382,7 @@ class batch_create {
 
 			<form action="?page=batch-create&action=process" method="post" enctype="multipart/form-data">
 				<p><?php _e( 'Use the form below to upload a <a href="http://en.wikipedia.org/wiki/Comma-separated_values">.csv</a> or a .xls file.', 'batch_create' ); ?></p>
+				<p><?php printf( __( 'Download sample files: <a href="%1$s">.csv</a>, <a href="%2$s">.xls</a>.', 'batch_create' ), plugins_url( 'batch-create-files/test.csv', __FILE__ ), plugins_url( 'batch-create-files/test.xls', __FILE__ ) ); ?></p>
 				<p>
 				  <input type="file" name="csv_file" id="csv_file" size="20" />
 				  <input type="hidden" name="max_file_size" value="100000" />
