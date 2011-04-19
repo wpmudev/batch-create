@@ -285,13 +285,15 @@ class batch_create {
 	function process_queue() {
 		global $wpdb, $current_site, $current_user;
 
-		$args = $wpdb->get_row( $wpdb->prepare( "SELECT batch_create_ID, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_ID = %d LIMIT 1", $_POST['blog_id'] ), ARRAY_A );
-		extract( $args );
+		$args = $wpdb->get_row( $wpdb->prepare( "SELECT batch_create_ID, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email, batch_create_user_role FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_ID = %d LIMIT 1", $_POST['blog_id'] ), ARRAY_A );
+		@extract( $args );
 
 		$blog_id = '';
 		$user_id = '';
 		$base = '/';
 
+		// Sanitize the blog name
+		$batch_create_blog_name = preg_replace('~[ .&]+~', '', $batch_create_blog_name);
 		$tmp_domain = strtolower( esc_html( $batch_create_blog_name ) );
 
 		$batch_create_user_email = trim( esc_html( $batch_create_user_email ) );
@@ -304,7 +306,8 @@ class batch_create {
 			$tmp_blog_path = $base . $tmp_domain . '/';
 		}
 
-		$user = get_user_by_email( $batch_create_user_email );
+		//$user = get_user_by_email( $batch_create_user_email );
+		$user = get_user_by('login', $batch_create_user_name); // This is better, since usernames can't be changed
 
 		if( ! empty( $user ) ) { // user exists
 			$user_id = $user->ID;
@@ -315,6 +318,7 @@ class batch_create {
 
 			$user_id = wpmu_create_user( $batch_create_user_name, $batch_create_user_pass,  $batch_create_user_email );
 			if( false == $user_id ) {
+				$this->log('There was an error creating a user ' . $batch_create_user_name);
 				die( '<p>' . __( 'There was an error creating a user', 'batch_create' ) . '</p>' );
 			} else {
 				wp_new_user_notification( $user_id, $batch_create_user_pass );
@@ -334,7 +338,22 @@ class batch_create {
 		}
 
 		if ( empty( $blog_id ) && ( ! in_array( $batch_create_blog_name, array( '', strtolower( 'null' ) ) ) && ! in_array( $batch_create_blog_title, array( '', strtolower( 'null' ) ) ) ) ) { // create blog
-			$blog_id = wpmu_create_blog( $tmp_blog_domain, $tmp_blog_path, esc_html( $batch_create_blog_title ), $user_id , 1, $current_site->id );
+			// Create user blog and set Admin user, as a consequence.
+			// Since this is the case, if the user in the batch queue has any explicit roles
+			// OTHER then 'administrator', we'll assign current logged in user as new blog admin.
+			if ('administrator' != $batch_create_user_role && !in_array($batch_create_user_role, array('', strtolower('null')))) {
+				global $current_user;
+				get_currentuserinfo();
+				$admin_id = $current_user->ID;
+			} else {
+				$admin_id = $user_id;
+			}
+			$blog_id = wpmu_create_blog( $tmp_blog_domain, $tmp_blog_path, esc_html( $batch_create_blog_title ), $admin_id , 1, $current_site->id );
+			// Now, if we created a new blog with currently logged in user,
+			// we need to add the guy from the batch queue to the blog too
+			if (!is_wp_error($blog_id) && $admin_id != $user_id) {
+				add_user_to_blog($blog_id, $user_id, $batch_create_user_role);
+			}
 
 			if( ! is_wp_error( $blog_id ) ) {
 				$content_mail = sprintf( __( 'New blog created by %1s\n\nAddress: http://%2s\nName: %3s', 'batch_create' ), $current_user->user_login , $tmp_blog_domain . $tmp_blog_path, esc_html( $batch_create_blog_title ) );
@@ -346,7 +365,10 @@ class batch_create {
 			} else {
 				$this->log( 'Error creating blog: ' . $tmp_blog_domain . $tmp_blog_path . ' - ' . $blog_id->get_error_message() );
 			}
-		}
+		} /* Vladislav addition */ else if (in_array($batch_create_blog_name, array('', strtolower('null')))) {
+			// If blog not explicitly requested, add user to main blog
+			$result = add_user_to_blog(BLOG_ID_CURRENT_SITE, $user_id, $batch_create_user_role);
+		} /* End addition */
 
 		$this->queue_remove( $batch_create_ID );
 
@@ -370,7 +392,7 @@ class batch_create {
 		}
 
 		if ( isset( $_GET['updated'] ) )
-			echo '<div id="message" class="updated fade"><p>' . stripslashes( urldecode( $_GET['updatedmsg'] ) ) . '</p></div>';
+			echo '<div id="message" class="updated fade"><p>' . stripslashes( batch_urldecode( $_GET['updatedmsg'] ) ) . '</p></div>';
 
 		echo '<div class="wrap">';
 			$tmp_queue_count_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d", $current_site->id ) );
@@ -385,6 +407,13 @@ class batch_create {
 				<p><?php printf( __( 'Download sample files: <a href="%1$s">.csv</a>, <a href="%2$s">.xls</a>.', 'batch_create' ), plugins_url( 'batch-create-files/test.csv', __FILE__ ), plugins_url( 'batch-create-files/test.xls', __FILE__ ) ); ?></p>
 				<p>
 				  <input type="file" name="csv_file" id="csv_file" size="20" />
+
+				<div>
+				  <input type="checkbox" name="header_row_yn" id="header_row_yn" value="1" />
+				  	<label for="header_row_yn"><?php _e('This file has a header row', 'batch_create');?></label>
+				  	<div class="howto"><?php _e('If this box is checked, the first row in the file <strong>WILL NOT</strong> be processed.', 'batch_create');?></div>
+				</div>
+
 				  <input type="hidden" name="max_file_size" value="100000" />
 				  <input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
 				</p>
@@ -416,6 +445,7 @@ class batch_create {
 		var rt_total = <?php echo $count_items; ?>;
 
 		function process_item(id) {
+			if (!parseInt(id)) return false; // What we have is not a numeric ID = there was an error. Bail out.
 			var data = {
 				action: 'process_queue',
 				blog_id: id
@@ -433,7 +463,7 @@ class batch_create {
 		$('.processing_result')
 			.html('<div id="progressbar"></div>')
 			.ajaxStop(function() {
-				<?php $destination = add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( sprintf( __( 'Queue processing complete. <a href="%s">See log file.</a>', 'batch_create' ), $this->log_file_url ) ), remove_query_arg( 'action', $_SERVER['REQUEST_URI'] ) ) ); ?>
+				<?php $destination = add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( sprintf( __( 'Queue processing complete. <a href="%s">See log file.</a>', 'batch_create' ), $this->log_file_url ) ), remove_query_arg( 'action', $_SERVER['REQUEST_URI'] ) ) ); ?>
 				window.location = "<?php echo $destination; ?>";
 			});
 
@@ -460,16 +490,20 @@ class batch_create {
 			exit;
 		}
 
+		// Fix plugin paths, if possible.
+		$this->admin_notices();
+
 		$action = isset( $_GET[ 'action' ] ) ? $_GET[ 'action' ] : '';
 		switch( $action ) {
 
 			case 'process': // process file upload
 
 				$file_path = $this->target_path . basename( $_FILES['csv_file']['name']);
+				$header_row_yn = @$_POST['header_row_yn'];
 
 				if( ! move_uploaded_file( $_FILES['csv_file']['tmp_name'], $file_path ) ) { // file not moved in upload directory
 
-					wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'There was an error uploading the file, please try again!', 'batch_create' ) ), wp_get_referer() ) ) );
+					wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'There was an error uploading the file, please try again!', 'batch_create' ) ), wp_get_referer() ) ) );
 					die;
 
 				} else { // upload successful
@@ -478,14 +512,14 @@ class batch_create {
 
 					if( ! in_array( $file_extension, array( 'csv', 'xls' ) ) ) { // unsupported file extension
 
-						wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'The file type you uploaded is not supported. Please upload a .csv or .xls file.', 'batch_create' ) ), wp_get_referer() ) ) );
+						wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'The file type you uploaded is not supported. Please upload a .csv or .xls file.', 'batch_create' ) ), wp_get_referer() ) ) );
 						die;
 
 					} else { // supported file extension
 
 						if ( ( $handle = @fopen( $file_path, 'r' ) ) == false ) { // unable to open file
 
-							wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'Error reading the uploaded file.', 'batch_create' ) ), wp_get_referer() ) ) );
+							wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'Error reading the uploaded file.', 'batch_create' ) ), wp_get_referer() ) ) );
 
 						} else { // open file
 
@@ -512,8 +546,9 @@ class batch_create {
 								for ( $i = 1; $i <= $data->sheets[0]['numRows']; $i++ ) {
 									$tmp_cols = array();
 									for ( $j = 1; $j <= $data->sheets[0]['numCols']; $j++ ) {
-										if( isset( $data->sheets[0]['cells'][$i][$j] ) )
-											$tmp_cols[] = $data->sheets[0]['cells'][$i][$j];
+										if( isset( $data->sheets[0]['cells'][$i][$j] ) ) {
+											$tmp_cols[$j] = $data->sheets[0]['cells'][$i][$j]; // Index the result array
+										} else $tmp_cols[$j] = ''; // Pad the result array -  this handles empty fields in the XLS
 									}
 									$tmp_new_blogs[] = $tmp_cols;
 								}
@@ -522,10 +557,34 @@ class batch_create {
 
 							if( !empty( $tmp_new_blogs ) ) {
 
+								if ($header_row_yn) array_shift($tmp_new_blogs); // Remove header row, if instructed to do so.
+
+								// Check for emails being unique
+								$emails = array();
+								$not_unique = array();
+								foreach ($tmp_new_blogs as $idx=>$tnb) {
+									if (!in_array($tnb[5], $emails)) $emails[$tnb[3]] = $tnb[5];
+									else {
+										$uname = array_search($tnb[5], $emails);
+										if ($tnb[3] != $uname) $not_unique[$tnb[5]] = (($not_unique[$tnb[5]]) ? $not_unique[$tnb[5]] . ', ' : $uname . ', ') . $tnb[3];
+									}
+								}
+								// New users with same emails - this is no good. Bail out.
+								if (!empty($not_unique)) {
+									$nu_msg = '<ul>';
+									foreach ($not_unique as $nid=>$nitem) {
+										$nu_msg .= '<li>' . $nid . ': ' . $nitem . '</li>';
+									}
+									$nu_msg .= '</ul>';
+									wp_redirect(add_query_arg('updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( sprintf( __( 'Queue processing error. These emails are not unique: %s', 'batch_create' ), $nu_msg ) ), wp_get_referer() ) ));
+									die;
+								}
+
 								// process data
 								foreach( $tmp_new_blogs as $tmp_new_blog ) {
 									$details_count = count( $tmp_new_blog );
 									if( in_array( $details_count, array( 5, 6 ) ) ) { // if there are 5 or 6 entries on the line
+										if (!count(array_filter($tmp_new_blog))) continue; // Every single field is empty - continue
 										$this->queue_insert( $tmp_new_blog );
 									}
 
@@ -533,12 +592,12 @@ class batch_create {
 
 							} else {
 
-								wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'No data was retrieved from the file. Please verify its content.', 'batch_create' ) ), wp_get_referer() ) ) );
+								wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'No data was retrieved from the file. Please verify its content.', 'batch_create' ) ), wp_get_referer() ) ) );
 								die;
 
 							}
 
-							wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'Items added to queue.', 'batch_create' ) ), wp_get_referer() ) ) );
+							wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'Items added to queue.', 'batch_create' ) ), wp_get_referer() ) ) );
 							die;
 
 						}
@@ -559,7 +618,7 @@ class batch_create {
 
 			case 'clear':
 				$this->queue_clear();
-				wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', urlencode( __( 'Queue cleared.', 'batch_create' ) ), wp_get_referer() ) ) );
+				wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'Queue cleared.', 'batch_create' ) ), wp_get_referer() ) ) );
 				exit;
 			break;
 
@@ -587,6 +646,28 @@ class batch_create {
 		error_log( date_i18n( 'Y-m-d H:i:s' ) . " - $message\n", 3, $this->log_file );
 	}
 
+}
+
+/**
+ * Uses base64 encoding to mangle the string before regularly urlencoding it.
+ *
+ * This is a fix for redirection 404 on some servers.
+ *
+ * @param string Message to be encoded.
+ * @return string encoded message.
+ */
+function batch_urlencode ($str) {
+	return urlencode(base64_encode($str));
+}
+
+/**
+ * Decodes the string back to its' original, usable form.
+ *
+ * @param string Message processed with batch_urlencode().
+ * @return string Decoded message.
+ */
+function batch_urldecode ($str) {
+	return urldecode(base64_decode($str));
 }
 
 $batch_create = new batch_create();
