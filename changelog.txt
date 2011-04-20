@@ -5,6 +5,18 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
+1.1.1 - 04/20/2100 - Vladislav Bailovic
+----------------------------------------------------------------------
+- Fix for adding users with roles.
+- Fix for adding existing users.
+- Fix for Excel processing.
+- Fix for 404 redirection.
+- Fix for identical emails for different users in queue.
+- Fix for error handling.
+- Added adding users to main site.
+- Added basic blog_name sanitization.
+- Added support for batch files with header rows. 
+
 1.1 - 01/26/2010
 ----------------------------------------------------------------------
 - New feature: allows addition of users to existing blogs
