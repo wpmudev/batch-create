@@ -4,7 +4,7 @@ Plugin Name: Batch Create
 Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: Andrew Billits, Ulrich Sossou
-Version: 1.1.1
+Version: 1.1.2
 Network: true
 Author URI: http://premium.wpmudev.org/
 Text Domain: batch_create
@@ -41,7 +41,7 @@ class batch_create {
 	 *
 	 * Since Batch Create 1.1.0
 	 */
-	var $version = '1.1.0';
+	var $version = '1.1.2';
 
 	/**
 	 * @var string $target_path Files upload directory
@@ -402,6 +402,8 @@ class batch_create {
 				printf( __( '<p class="processing_result"><strong>Note:</strong> There are %d items (blogs/users) waiting to be processed. Click <a href="?page=batch-create&action=loop">here</a> to process the queue. If there is a problem, you can clear the queue by clicking <a href="?page=batch-create&action=clear">here</a>.</p>', 'batch_create' ), $tmp_queue_count_count );
 			?>
 
+			<a href="?page=batch-create&action=clear_log"><?php _e('Clear the log file', 'batch_create');?></a>
+
 			<form action="?page=batch-create&action=process" method="post" enctype="multipart/form-data">
 				<p>
 				  <input type="file" name="csv_file" id="csv_file" size="20" />
@@ -493,6 +495,15 @@ class batch_create {
 
 		$action = isset( $_GET[ 'action' ] ) ? $_GET[ 'action' ] : '';
 		switch( $action ) {
+
+			case 'clear_log':
+				if (file_exists($this->log_file) && filesize($this->log_file) > 0) {
+					// Blank out the file
+					$fp = fopen($this->log_file, 'w');
+					fclose($fp);
+				}
+				wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'Log file cleared', 'batch_create' ) ), wp_get_referer() ) ) );
+				die;
 
 			case 'process': // process file upload
 
