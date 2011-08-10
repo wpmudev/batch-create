@@ -4,7 +4,7 @@ Plugin Name: Batch Create
 Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: Andrew Billits, Ulrich Sossou
-Version: 1.1.2
+Version: 1.1.3
 Network: true
 Author URI: http://premium.wpmudev.org/
 Text Domain: batch_create
@@ -348,7 +348,7 @@ class batch_create {
 			} else {
 				$admin_id = $user_id;
 			}
-			$blog_id = wpmu_create_blog( $tmp_blog_domain, $tmp_blog_path, esc_html( $batch_create_blog_title ), $admin_id , 1, $current_site->id );
+			$blog_id = wpmu_create_blog( $tmp_blog_domain, $tmp_blog_path, esc_html( $batch_create_blog_title ), $admin_id , array('public' => 1), $current_site->id );
 			// Now, if we created a new blog with currently logged in user,
 			// we need to add the guy from the batch queue to the blog too
 			if (!is_wp_error($blog_id) && $admin_id != $user_id) {
