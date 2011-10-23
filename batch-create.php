@@ -4,7 +4,7 @@ Plugin Name: Batch Create
 Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: Andrew Billits, Ulrich Sossou
-Version: 1.1.3
+Version: 1.2.1
 Network: true
 Author URI: http://premium.wpmudev.org/
 Text Domain: batch_create
@@ -41,7 +41,7 @@ class batch_create {
 	 *
 	 * Since Batch Create 1.1.0
 	 */
-	var $version = '1.1.2';
+	var $version = '1.2';
 
 	/**
 	 * @var string $target_path Files upload directory
@@ -288,6 +288,9 @@ class batch_create {
 		$args = $wpdb->get_row( $wpdb->prepare( "SELECT batch_create_ID, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email, batch_create_user_role FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_ID = %d LIMIT 1", $_POST['blog_id'] ), ARRAY_A );
 		@extract( $args );
 
+		$batch_create_user_role = trim(strtolower($batch_create_user_role));
+		$batch_create_blog_title = trim($batch_create_blog_title);
+
 		$blog_id = '';
 		$user_id = '';
 		$base = '/';
@@ -306,12 +309,20 @@ class batch_create {
 			$tmp_blog_path = $base . $tmp_domain . '/';
 		}
 
+		$this->log(sprintf(
+			"--- Starting queue item processing ---\n" .
+			"\tBlog name: [%s]\n" .
+			"\tUser name: [%s]",
+		$batch_create_blog_name, $batch_create_user_name), 'debug');
+
 		//$user = get_user_by_email( $batch_create_user_email );
 		$user = get_user_by('login', $batch_create_user_name); // This is better, since usernames can't be changed
 
 		if( ! empty( $user ) ) { // user exists
+			$this->log(sprintf('User %s already exists (%d)', $batch_create_user_name, $user->ID), 'debug');
 			$user_id = $user->ID;
 		} else { // create user
+			$this->log(sprintf('User %s does NOT exists. Creating a new user', $batch_create_user_name), 'debug');
 			if( $batch_create_user_pass == '' || $batch_create_user_pass == strtolower( 'null' ) ) {
 				$batch_create_user_pass = wp_generate_password();
 			}
@@ -326,36 +337,59 @@ class batch_create {
 			}
 		}
 
-		if ( ! in_array( $batch_create_blog_name, array( '', strtolower( 'null' ) ) ) ) {
+		if ( ! in_array( $batch_create_blog_name, array( '', 'null' ) ) ) {
+			$this->log(sprintf('Blog name not empty (%s)', $batch_create_blog_name), 'debug');
 			$blog_id = get_id_from_blogname( $batch_create_blog_name );
-			if( !empty( $blog_id ) ) { // blog exists
+			if( $blog_id ) { // blog exists
+				$this->log(sprintf('Blog (%s) already exists (%d), user can be added', $batch_create_blog_name, $blog_id), 'debug');
 				if( isset( $batch_create_user_role ) && add_user_to_blog( $blog_id, $user_id, $batch_create_user_role ) == true ) { // add user to blog
 					$this->log( "User $batch_create_user_name successfully added to blog {$tmp_blog_domain}{$tmp_blog_path}" );
 				} else {
+					$this->log(sprintf('Blog (%s) does NOT already exist, not adding user at this point', $batch_create_blog_name), 'debug');
 					$this->log( "Unable to add user $batch_create_user_name to blog {$tmp_blog_domain}{$tmp_blog_path}" );
 				}
+			} else {
+				$this->log(sprintf("Blog (%s) does NOT already exist", $batch_create_blog_name), 'debug');
 			}
 		}
 
-		if ( empty( $blog_id ) && ( ! in_array( $batch_create_blog_name, array( '', strtolower( 'null' ) ) ) && ! in_array( $batch_create_blog_title, array( '', strtolower( 'null' ) ) ) ) ) { // create blog
+		if (in_array($batch_create_blog_title, array('', 'null'))) {
+			$this->log(sprintf('Blog title is empty! Blog will NOT be created'), 'debug');
+		}
+
+		if ( !$blog_id && ( ! in_array( $batch_create_blog_name, array( '', 'null' ) ) && ! in_array( $batch_create_blog_title, array( '', 'null' ) ) ) ) { // create blog
+			$this->log(sprintf('Starting new blog creation'), 'debug');
 			// Create user blog and set Admin user, as a consequence.
 			// Since this is the case, if the user in the batch queue has any explicit roles
 			// OTHER then 'administrator', we'll assign current logged in user as new blog admin.
-			if ('administrator' != $batch_create_user_role && !in_array($batch_create_user_role, array('', strtolower('null')))) {
+			if ('administrator' != $batch_create_user_role && !in_array($batch_create_user_role, array('', 'null'))) {
 				global $current_user;
 				get_currentuserinfo();
 				$admin_id = $current_user->ID;
+				$this->log(sprintf('New user is NOT administrator: using current user (%s) as admin instead', $current_user->user_login), 'debug');
 			} else {
+				$this->log(sprintf('New user is administrator'), 'debug');
 				$admin_id = $user_id;
 			}
+			$this->log(sprintf(
+				"Attempting to create a new blog with this data:\n" .
+				"\tDomain: [%s]\n" .
+				"\tPath: [%s]\n" .
+				"\tTitle: [%s]\n" .
+				"\tAdmin user ID: [%s]\n" .
+				"\tOn site: [%s]",
+				$tmp_blog_domain, $tmp_blog_path, esc_html($batch_create_blog_title), $admin_id , $current_site->id
+			), 'debug');
 			$blog_id = wpmu_create_blog( $tmp_blog_domain, $tmp_blog_path, esc_html( $batch_create_blog_title ), $admin_id , array('public' => 1), $current_site->id );
 			// Now, if we created a new blog with currently logged in user,
 			// we need to add the guy from the batch queue to the blog too
 			if (!is_wp_error($blog_id) && $admin_id != $user_id) {
+				$this->log(sprintf('Blog created with current user as admin; adding new user as (%s)', $batch_create_user_role), 'debug');
 				add_user_to_blog($blog_id, $user_id, $batch_create_user_role);
 			}
 
 			if( ! is_wp_error( $blog_id ) ) {
+				$this->log('Blog successfully created, sending email', 'debug');
 				$content_mail = sprintf( __( 'New blog created by %1s\n\nAddress: http://%2s\nName: %3s', 'batch_create' ), $current_user->user_login , $tmp_blog_domain . $tmp_blog_path, esc_html( $batch_create_blog_title ) );
 				@wp_mail( get_option( 'admin_email' ),  sprintf( __( '[%s] New Blog Created', 'batch_create' ), $current_site->site_name ), $content_mail );
 
@@ -367,6 +401,7 @@ class batch_create {
 			}
 		} /* Vladislav addition */ else if (in_array($batch_create_blog_name, array('', strtolower('null')))) {
 			// If blog not explicitly requested, add user to main blog
+			$this->log("There was no explicitly requested blogs; adding user to main blog", 'debug');
 			$result = add_user_to_blog(BLOG_ID_CURRENT_SITE, $user_id, $batch_create_user_role);
 		} /* End addition */
 
@@ -375,6 +410,7 @@ class batch_create {
 		$query = $wpdb->prepare( "SELECT batch_create_ID FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d LIMIT 1", $current_site->id );
 		$queue_item = $wpdb->get_var( $query );
 
+		$this->log("--- Queue item processing finished ---\n", 'debug');
 		die( $queue_item );
 	}
 
@@ -395,35 +431,63 @@ class batch_create {
 			echo '<div id="message" class="updated fade"><p>' . stripslashes( batch_urldecode( $_GET['updatedmsg'] ) ) . '</p></div>';
 
 		echo '<div class="wrap">';
+		echo '<h2>' . __( 'Batch Create', 'batch_create' ) . '</h2>';
+		if ('show_log' == @$_GET['action']) {
+			$file = @file_get_contents($this->log_file);
+			$file = $file ? $file : __('<em>Your log file is empty</em>', 'batch_create');
+			echo '' .
+				'<a href="?page=batch-create">' . __('Go back', 'batch_create') . '</a>' .
+				'&nbsp;|&nbsp;' .
+				'<a href="?page=batch-create&action=clear_log">' . __('Clear the log file', 'batch_create') . '</a>' .
+			'';
+			echo '<div>' .
+				"<pre class='widefat'>{$file}\n </pre>" .
+			'</div>';
+			echo '' .
+				'<a href="?page=batch-create">' . __('Go back', 'batch_create') . '</a>' .
+				'&nbsp;|&nbsp;' .
+				'<a href="?page=batch-create&action=clear_log">' . __('Clear the log file', 'batch_create') . '</a>' .
+			'';
+		} else {
 			$tmp_queue_count_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d", $current_site->id ) );
+			$olds = $this->_get_old_sources();
 
-			echo '<h2>' . __( 'Batch Create', 'batch_create' ) . '</h2>';
-			if ( $tmp_queue_count_count > 0 )
-				printf( __( '<p class="processing_result"><strong>Note:</strong> There are %d items (blogs/users) waiting to be processed. Click <a href="?page=batch-create&action=loop">here</a> to process the queue. If there is a problem, you can clear the queue by clicking <a href="?page=batch-create&action=clear">here</a>.</p>', 'batch_create' ), $tmp_queue_count_count );
-			?>
+				if ( $tmp_queue_count_count > 0 )
+					printf( __( '<p class="processing_result"><strong>Note:</strong> There are %d items (blogs/users) waiting to be processed. Click <a href="?page=batch-create&action=loop">here</a> to process the queue. If there is a problem, you can clear the queue by clicking <a href="?page=batch-create&action=clear">here</a>.</p>', 'batch_create' ), $tmp_queue_count_count );
+				?>
 
-			<a href="?page=batch-create&action=clear_log"><?php _e('Clear the log file', 'batch_create');?></a>
+				<a href="?page=batch-create&action=clear_log"><?php _e('Clear the log file', 'batch_create');?></a>
+				&nbsp;|&nbsp;
+				<a href="?page=batch-create&action=show_log"><?php _e('View the log file', 'batch_create');?></a>
 
-			<form action="?page=batch-create&action=process" method="post" enctype="multipart/form-data">
-				<p>
-				  <input type="file" name="csv_file" id="csv_file" size="20" />
+				<form action="?page=batch-create&action=process" method="post" enctype="multipart/form-data">
+					<p>
+					  <input type="file" name="csv_file" id="csv_file" size="20" />
 
-				<div>
-				  <input type="checkbox" name="header_row_yn" id="header_row_yn" value="1" />
-				  	<label for="header_row_yn"><?php _e('This file has a header row', 'batch_create');?></label>
-				  	<div class="howto"><?php _e('If this box is checked, the first row in the file <strong>WILL NOT</strong> be processed.', 'batch_create');?></div>
-				</div>
+					<div>
+					  <input type="checkbox" name="header_row_yn" id="header_row_yn" value="1" />
+					  	<label for="header_row_yn"><?php _e('This file has a header row', 'batch_create');?></label>
+					  	<div class="howto"><?php _e('If this box is checked, the first row in the file <strong>WILL NOT</strong> be processed.', 'batch_create');?></div>
+					</div>
 
-				  <input type="hidden" name="max_file_size" value="100000" />
-				  <input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
-				</p>
-				<p class="submit">
-				  <input name="Submit" value="<?php _e( 'Upload &raquo;', 'batch_create' ) ?>" type="submit" />
-				</p>
-			</form>
+					  <input type="hidden" name="max_file_size" value="100000" />
+					  <input type="hidden" name="_wp_http_referer" value="<?php echo $_SERVER['REQUEST_URI'] ?>" />
+					</p>
+					<p class="submit">
+					  <input name="Submit" value="<?php _e( 'Upload &raquo;', 'batch_create' ) ?>" type="submit" />
+					</p>
+				</form>
 
-			<?php
-			$this->instructions();
+				<?php if ($olds) { ?>
+					<p>
+						<?php printf(__('You have %s old source file(s) stored on your system. These are no longer needed.', 'batch_create'), count($olds)); ?>
+						<a href="?page=batch-create&action=clear_old_sources"><?php _e('Delete them now.', 'batch_create');?></a>
+					</p>
+				<?php } ?>
+
+				<?php
+				$this->instructions();
+			}
 		echo '</div>';
 	}
 
@@ -463,7 +527,7 @@ class batch_create {
 		$('.processing_result')
 			.html('<div id="progressbar"></div>')
 			.ajaxStop(function() {
-				<?php $destination = add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( sprintf( __( 'Queue processing complete. <a href="%s">See log file.</a>', 'batch_create' ), $this->log_file_url ) ), remove_query_arg( 'action', $_SERVER['REQUEST_URI'] ) ) ); ?>
+				<?php $destination = add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( sprintf( __( 'Queue processing complete. <a href="%s">See log file.</a>', 'batch_create' ), admin_url('network/settings.php?page=batch-create&action=show_log')) ), remove_query_arg( 'action', $_SERVER['REQUEST_URI'] ) ) ); ?>
 				window.location = "<?php echo $destination; ?>";
 			});
 
@@ -505,6 +569,14 @@ class batch_create {
 				wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'Log file cleared', 'batch_create' ) ), wp_get_referer() ) ) );
 				die;
 
+			case 'clear_old_sources':
+				$olds = $this->_get_old_sources();
+				foreach ($olds as $old) {
+					@unlink($old);
+				}
+				wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'Old sources deleted', 'batch_create' ) ), wp_get_referer() ) ) );
+				die;
+
 			case 'process': // process file upload
 
 				$file_path = $this->target_path . basename( $_FILES['csv_file']['name']);
@@ -520,14 +592,14 @@ class batch_create {
 					$file_extension = end( explode( '.', $file_path ) );
 
 					if( ! in_array( $file_extension, array( 'csv', 'xls' ) ) ) { // unsupported file extension
-
+						@unlink($file_path); // Kill the file first
 						wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'The file type you uploaded is not supported. Please upload a .csv or .xls file.', 'batch_create' ) ), wp_get_referer() ) ) );
 						die;
 
 					} else { // supported file extension
 
 						if ( ( $handle = @fopen( $file_path, 'r' ) ) == false ) { // unable to open file
-
+							@unlink($file_path); // Kill the file first
 							wp_redirect( add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( __( 'Error reading the uploaded file.', 'batch_create' ) ), wp_get_referer() ) ) );
 
 						} else { // open file
@@ -536,7 +608,8 @@ class batch_create {
 
 							if( 'csv' == $file_extension ) { // if csv file
 
-								while ( ( $buffer = fgetcsv( $handle, 4096, ',' ) ) !== false ) {
+								// Undefined buffer size should help with processing issue.
+								while ( ( $buffer = fgetcsv( $handle, 0, ',' ) ) !== false ) {
 									$tmp_new_blogs[] = $buffer;
 								}
 
@@ -563,6 +636,7 @@ class batch_create {
 								}
 
 							}
+							@unlink($file_path); // Kill the file, we got the array
 
 							if( !empty( $tmp_new_blogs ) ) {
 
@@ -652,8 +726,18 @@ class batch_create {
 	 *
 	 * Since Batch Create 1.1.0
 	 */
-	function log( $message ) {
-		error_log( date_i18n( 'Y-m-d H:i:s' ) . " - $message\n", 3, $this->log_file );
+	function log( $message, $level='info' ) {
+		error_log( date_i18n( 'Y-m-d H:i:s' ) . " [{$level}] - $message\n", 3, $this->log_file );
+	}
+
+	/**
+	 * Fetches a list of old source files
+	 *
+	 * @return array
+	 */
+	function _get_old_sources () {
+		$files = glob($this->target_path . '*.{csv,xls}', GLOB_BRACE);
+		return $files ? $files : array();
 	}
 
 }
