@@ -41,7 +41,7 @@ class batch_create {
 	 *
 	 * Since Batch Create 1.1.0
 	 */
-	var $version = '1.2';
+	var $version = '1.2.1';
 
 	/**
 	 * @var string $target_path Files upload directory
