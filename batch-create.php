@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: Andrew Billits, Ulrich Sossou
 Text Domain: batch_create
-Version: 1.2.2
+Version: 1.2.3
 Network: true
 Author URI: http://premium.wpmudev.org/
 Text Domain: batch_create
@@ -42,7 +42,7 @@ class batch_create {
 	 *
 	 * Since Batch Create 1.1.0
 	 */
-	var $version = '1.2.1';
+	var $version = '1.2.3';
 
 	/**
 	 * @var string $target_path Files upload directory
@@ -287,11 +287,12 @@ class batch_create {
 		global $wpdb, $current_site, $current_user;
 		set_time_limit(180); // Try to give the script plenty of time to run
 
-		$args = $wpdb->get_row( $wpdb->prepare( "SELECT batch_create_ID, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email, batch_create_user_role FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_ID = %d LIMIT 1", $_POST['blog_id'] ), ARRAY_A );
-		@extract( $args );
-
-		$batch_create_user_role = trim(strtolower($batch_create_user_role));
-		$batch_create_blog_title = trim($batch_create_blog_title);
+		$args = $wpdb->get_row($wpdb->prepare(
+			"SELECT batch_create_ID, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, " .
+				"batch_create_user_pass, batch_create_user_email, batch_create_user_role " .
+				"FROM {$wpdb->base_prefix}batch_create_queue"
+		), ARRAY_A);
+		@extract($args);
 
 		$blog_id = '';
 		$user_id = '';
@@ -299,9 +300,22 @@ class batch_create {
 
 		// Sanitize the blog name
 		$batch_create_blog_name = preg_replace('~[ .&]+~', '', $batch_create_blog_name);
-		$tmp_domain = strtolower( esc_html( $batch_create_blog_name ) );
+		$tmp_domain = strtolower(esc_html($batch_create_blog_name));
 
-		$batch_create_user_email = trim( esc_html( $batch_create_user_email ) );
+		// Sanitize blog title
+		$batch_create_blog_title = trim($batch_create_blog_title);
+
+		// Sanitize user name
+		$batch_create_user_name = trim($batch_create_user_name);
+
+		// Sanitize password
+		$batch_create_user_pass = trim($batch_create_user_pass);
+
+		// Sanitize user email
+		$batch_create_user_email = trim(esc_html($batch_create_user_email));
+
+		// Sanitize user role
+		$batch_create_user_role = trim(strtolower($batch_create_user_role));
 
 		if( constant( 'VHOST' ) == 'yes' ) {
 			$tmp_blog_domain = $tmp_domain . '.' . $current_site->domain;
@@ -332,7 +346,6 @@ class batch_create {
 			$user_id = wpmu_create_user( $batch_create_user_name, $batch_create_user_pass,  $batch_create_user_email );
 			if( false == $user_id ) {
 				$this->log('There was an error creating a user ' . $batch_create_user_name);
-				die( '<p>' . __( 'There was an error creating a user', 'batch_create' ) . '</p>' );
 			} else {
 				wp_new_user_notification( $user_id, $batch_create_user_pass );
 				$this->log( "User: $batch_create_user_name created!" );
@@ -359,7 +372,7 @@ class batch_create {
 			$this->log(sprintf('Blog title is empty! Blog will NOT be created'), 'debug');
 		}
 
-		if ( !$blog_id && ( ! in_array( $batch_create_blog_name, array( '', 'null' ) ) && ! in_array( $batch_create_blog_title, array( '', 'null' ) ) ) ) { // create blog
+		if ( !$blog_id && $user_id && ( ! in_array( $batch_create_blog_name, array( '', 'null' ) ) && ! in_array( $batch_create_blog_title, array( '', 'null' ) ) ) ) { // create blog
 			$this->log(sprintf('Starting new blog creation'), 'debug');
 			// Create user blog and set Admin user, as a consequence.
 			// Since this is the case, if the user in the batch queue has any explicit roles
@@ -401,19 +414,17 @@ class batch_create {
 			} else {
 				$this->log( 'Error creating blog: ' . $tmp_blog_domain . $tmp_blog_path . ' - ' . $blog_id->get_error_message() );
 			}
-		} /* Vladislav addition */ else if (in_array($batch_create_blog_name, array('', strtolower('null')))) {
+		} /* Vladislav addition */ else if ($user_id && in_array($batch_create_blog_name, array('', strtolower('null')))) {
 			// If blog not explicitly requested, add user to main blog
 			$this->log("There was no explicitly requested blogs; adding user to main blog", 'debug');
 			$result = add_user_to_blog(BLOG_ID_CURRENT_SITE, $user_id, $batch_create_user_role);
+			$blog_id = BLOG_ID_CURRENT_SITE;
 		} /* End addition */
 
 		$this->queue_remove( $batch_create_ID );
 
-		$query = $wpdb->prepare( "SELECT batch_create_ID FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d LIMIT 1", $current_site->id );
-		$queue_item = $wpdb->get_var( $query );
-
 		$this->log("--- Queue item processing finished ---\n", 'debug');
-		die( $queue_item );
+		die(__('Processing finished', 'batch_create'));
 	}
 
 	/**
@@ -503,41 +514,50 @@ class batch_create {
 		$queue_item = $wpdb->get_var( $query );
 
 		$count_items = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->base_prefix}batch_create_queue WHERE batch_create_site = %d", $current_site->id ) );
+
+		$destination = add_query_arg('updated', 'true', add_query_arg(
+			'updatedmsg', batch_urlencode(sprintf(
+				__('Queue processing complete. <a href="%s">See log file.</a>', 'batch_create'),
+				admin_url('network/settings.php?page=batch-create&action=show_log')
+			)), remove_query_arg(
+				'action', $_SERVER['REQUEST_URI']
+			)
+		));
 	?>
-	<script type="text/javascript" >
-	jQuery(function($) {
-		process_item(<?php echo $queue_item; ?>);
-		var rt_count = 0;
-		var rt_total = <?php echo $count_items; ?>;
+<script type="text/javascript" >
+jQuery(function($) {
 
-		function process_item(id) {
-			if (!parseInt(id)) return false; // What we have is not a numeric ID = there was an error. Bail out.
-			var data = {
-				action: 'process_queue',
-				blog_id: id
-			};
 
-			$.post(ajaxurl, data, function(response) {
-				if( '' !== response ) {
-					process_item(response);
-				}
-				rt_count = rt_count + 1;
-				$( '#progressbar' ).progressbar( 'value', ( rt_count / rt_total ) * 100 );
-			});
-		}
+var rt_count = 0;
+var rt_total = <?php echo $count_items; ?>;
 
-		$('.processing_result')
-			.html('<div id="progressbar"></div>')
-			.ajaxStop(function() {
-				<?php $destination = add_query_arg( 'updated', 'true', add_query_arg( 'updatedmsg', batch_urlencode( sprintf( __( 'Queue processing complete. <a href="%s">See log file.</a>', 'batch_create' ), admin_url('network/settings.php?page=batch-create&action=show_log')) ), remove_query_arg( 'action', $_SERVER['REQUEST_URI'] ) ) ); ?>
-				window.location = "<?php echo $destination; ?>";
-			});
+function process_item () {
+	if (rt_count >= rt_total) return false;
 
-		$( '#progressbar' ).progressbar({
-			value: 1
-		});
+	$.post(ajaxurl, {"action": "process_queue"}, function(response) {
+		process_item();
+		rt_count = rt_count + 1;
+		$( '#progressbar' ).progressbar('value', (rt_count / rt_total) * 100);
 	});
-	</script>
+}
+
+$('.processing_result')
+	.html('<div id="progressbar"></div>')
+	.ajaxStop(function() {
+		window.location = "<?php echo $destination; ?>";
+	})
+;
+
+$('#progressbar').progressbar({
+	"value": 1
+});
+
+// Initialize processing
+process_item();
+
+
+});
+</script>
 	<?php
 	}
 
@@ -668,7 +688,10 @@ class batch_create {
 								// process data
 								foreach( $tmp_new_blogs as $tmp_new_blog ) {
 									$details_count = count( $tmp_new_blog );
-									if( in_array( $details_count, array( 5, 6 ) ) ) { // if there are 5 or 6 entries on the line
+									if (
+										in_array($details_count, array(5, 6)) // if there are 5 or 6 entries on the line
+										|| $details_count > 6 // assume a row padded with empty columns
+									) {
 										if (!count(array_filter($tmp_new_blog))) continue; // Every single field is empty - continue
 										$this->queue_insert( $tmp_new_blog );
 									}

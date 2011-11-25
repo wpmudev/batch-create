@@ -6,6 +6,12 @@ Change Log:
 ----------------------------------------------------------------------
 
 
+1.2.3 - 11/25/2011 - Vladislav Bailovic
+----------------------------------------------------------------------
+- More persistent queue processing.
+- Additional checks for files padded with empty columns.
+
+
 1.2.2 - 11/16/2011 - Vladislav Bailovic
 ----------------------------------------------------------------------
 - Enforcing time limit to prevent script timeout issues.
