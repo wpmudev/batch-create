@@ -71,10 +71,6 @@ class Incsub_Batch_Create_Creator {
 
 			fclose( $handle );
 
-			//for ( $i = 0; $i < count( $tmp_new_blogs ); $i++ ) {
-			//	$tmp_new_blogs[ $i ][1] = utf8_decode( $tmp_new_blog[ $i ][1] );
-			//}
-
 		} 
 		elseif( 'xls' == $file_extension ) { // if xls file
 
@@ -292,7 +288,12 @@ class Incsub_Batch_Create_Creator {
 
 			do_action( 'wpmu_new_user', $user_id );
 
-			wp_new_user_notification( $user_id, $password );
+			$send = true;
+			$send = apply_filters( 'batch_create_send_new_user_notification', $send, $user_id );
+
+			if ( $send )
+				wp_new_user_notification( $user_id, $password );
+
 			$this->log( "User: $user_name created!" );
 		}
 
@@ -403,7 +404,10 @@ class Incsub_Batch_Create_Creator {
 			if ( ! is_super_admin( $admin_id ) && ! get_user_option( 'primary_blog', $admin_id ) )
 				update_user_option( $admin_id, 'primary_blog', $blog_id, true );
 
-			if ( ! empty( $password ) )
+			$send = true;
+			$send = apply_filters( 'batch_create_send_welcome_notification', $send, $blog_id );
+
+			if ( ! empty( $password ) && $send )
 				wpmu_welcome_notification( $blog_id, $admin_id, $password, $blog_title, array( 'public' => 1 ) );
 
 			$this->log( 'Blog: ' . $newdomain . $path . ' created!' );
