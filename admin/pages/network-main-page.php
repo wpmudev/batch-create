@@ -57,7 +57,7 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 				<input type="file" name="csv_file" id="csv_file" size="20" /><br/><br/>
 				<label for="header_row_yn">
 					<input type="checkbox" name="header_row_yn" id="header_row_yn" value="1" /> 
-					<?php _e('This file has a header row', 'batch_create');?>
+					<?php _e('This file has a header row', INCSUB_BATCH_CREATE_LANG_DOMAIN );?>
 				</label>
 				<p><span class="description"><?php _e( 'If this box is checked, the first row in the file <strong>WILL NOT</strong> be processed.', INCSUB_BATCH_CREATE_LANG_DOMAIN );?></span></p>
 					  
@@ -72,7 +72,7 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 
 			$log_file = $creator->get_log_content();
 
-			$log_file = $log_file ? $log_file : '<p>The log is empty</p>';
+			$log_file = $log_file ? $log_file : '<p>' . __( 'The log is empty', INCSUB_BATCH_CREATE_LANG_DOMAIN ) . '</p>';
 
 			$form_url = add_query_arg(
 				array(
@@ -85,7 +85,7 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 				<form action="<?php echo esc_url( $form_url ); ?>" method="post" >
 					<pre style="width:96%;border:1px solid #DEDEDE;padding:2%;"><?php echo $log_file; ?></pre>
 					<?php wp_nonce_field( 'batch-create-delete-log-file' ); ?>
-					<?php submit_button( __( 'Delete log file' ) ); ?>
+					<?php submit_button( __( 'Delete log file', INCSUB_BATCH_CREATE_LANG_DOMAIN ) ); ?>
 				</form>
 			<?php
 		}
