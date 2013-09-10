@@ -98,6 +98,7 @@ class Incsub_Batch_Create {
 
 		// Admin Pages
 		require_once( INCSUB_BATCH_CREATE_ADMIN_DIR . 'pages/network-main-page.php' );
+		require_once( INCSUB_BATCH_CREATE_ADMIN_DIR . 'tables/queue-table.php' );
 	}
 
 	/**
@@ -153,7 +154,9 @@ class Incsub_Batch_Create {
 			'screen_icon_slug' => 'batch-create',
 			'tabs' => array(
 				'upload' => __( 'Batch Create', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
+				'queue' => __( 'Current queue', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
 				'log-file' => __( 'Log File', INCSUB_BATCH_CREATE_LANG_DOMAIN )
+				
 			)
 		);
 		self::$network_main_menu_page = new Batch_Create_Network_Main_Menu( 'batch-create-menu', 'manage_network', $args );

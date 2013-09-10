@@ -13,32 +13,7 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 
 			$this->display_notices();
 
-			$model = batch_create_get_model();
-			$tmp_queue_count = $model->get_pending_queue_count();
-
-			if ( $tmp_queue_count > 0 ) {
-
-				$proccess_link = add_query_arg(
-					'action',
-					'loop',
-					$this->get_permalink()
-				);
-
-				$clear_link = add_query_arg(
-					'action',
-					'clear',
-					$this->get_permalink()
-				);
-
-				$message = sprintf( 
-					__( '<strong>Note:</strong> There are %d items (blogs/users) waiting to be processed. Click <a class="button-secondary" href="%s">here</a> to process the queue. If there is a problem, you can clear the queue by clicking <a href="%s">here</a>.', INCSUB_BATCH_CREATE_LANG_DOMAIN ), 
-					$tmp_queue_count, 
-					$proccess_link,
-					$clear_link
-				);
-
-				Incsub_Batch_Create_Errors_Handler::show_updated_notice( $message, 'processing_result' );
-			}
+			$this->show_process_queue_notice();
 
 			$creator = batch_create_get_creator();
 			$old_files = $creator->get_old_sources();
@@ -54,7 +29,8 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 				Incsub_Batch_Create_Errors_Handler::show_updated_notice( $message );
 			}
 
-			$test_file_url = INCSUB_BATCH_CREATE_PLUGIN_URL . 'inc/test.xls'; 
+			$test_xls_url = INCSUB_BATCH_CREATE_PLUGIN_URL . 'inc/test.xls'; 
+			$test_csv_url = INCSUB_BATCH_CREATE_PLUGIN_URL . 'inc/test.csv'; 
 
 			$form_url = add_query_arg(
 				'action',
@@ -66,7 +42,7 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 			<p><?php _e( "Batch create is designed for quickly creating sites and/or usernames or adding users to an existing site in batches of 10's, 100's or 1000's by uploading a .xls file.", INCSUB_BATCH_CREATE_LANG_DOMAIN ); ?></p>
 
 			<ol>
-				<li><?php printf( __( 'Download <a href="%s">this .xls</a> file and use it as a template to create your batch file.', INCSUB_BATCH_CREATE_LANG_DOMAIN ), $test_file_url ); ?></li>
+				<li><?php printf( __( 'Download <a href="%s">this .xls</a> or <a href="%s">this .csv</a> file and use it as a template to create your batch file.', INCSUB_BATCH_CREATE_LANG_DOMAIN ), $test_xls_url, $test_csv_url ); ?></li>
 				<li><?php _e( "Once you've added sites and/or usernames to the template save your file as an Excel 97-2003 Workbook or a .csv file.", INCSUB_BATCH_CREATE_LANG_DOMAIN ); ?></li>
 				<li><?php _e( "Click on 'Choose File', locate your batch file, select 'This file has a header row', if you kept the first row in the template file, and click Upload.", INCSUB_BATCH_CREATE_LANG_DOMAIN ); ?></li>
 				<li><?php _e( "Once uploaded it is placed into a queue. You need to click on the link 'here' in 'Click here to process the queue.' to start creating the usernames and/or sites.", INCSUB_BATCH_CREATE_LANG_DOMAIN ); ?></li>
@@ -114,7 +90,47 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 			<?php
 		}
 
+		if ( 'queue' == $this->get_current_tab() ) {
+			$table = new Batch_Create_Queue_Table();
+			$table->prepare_items();
+
+			$this->show_process_queue_notice();
+
+			?><form action="" method="post" ><?php
+				$table->display();
+			?></form><?php
+		}
+
 		
+	}
+
+	private function show_process_queue_notice() {
+		$model = batch_create_get_model();
+		$tmp_queue_count = $model->get_pending_queue_count();
+
+		if ( $tmp_queue_count > 0 ) {
+
+			$proccess_link = add_query_arg(
+				'action',
+				'loop',
+				$this->get_permalink()
+			);
+
+			$clear_link = add_query_arg(
+				'action',
+				'clear',
+				$this->get_permalink()
+			);
+
+			$message = sprintf( 
+				__( '<strong>Note:</strong> There are %d items (blogs/users) waiting to be processed. Click <a class="button-secondary" href="%s">here</a> to process the queue. If there is a problem, you can clear the queue by clicking <a href="%s">here</a>.', INCSUB_BATCH_CREATE_LANG_DOMAIN ), 
+				$tmp_queue_count, 
+				$proccess_link,
+				$clear_link
+			);
+
+			Incsub_Batch_Create_Errors_Handler::show_updated_notice( $message, 'processing_result' );
+		}
 	}
 
 	private function display_notices() {

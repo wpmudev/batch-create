@@ -71,6 +71,10 @@ class Incsub_Batch_Create_Creator {
 
 			fclose( $handle );
 
+			//for ( $i = 0; $i < count( $tmp_new_blogs ); $i++ ) {
+			//	$tmp_new_blogs[ $i ][1] = utf8_decode( $tmp_new_blog[ $i ][1] );
+			//}
+
 		} 
 		elseif( 'xls' == $file_extension ) { // if xls file
 
@@ -101,14 +105,28 @@ class Incsub_Batch_Create_Creator {
 
 		$emails = array();
 		$not_unique = array();
+
+		switch ( $file_extension ) {
+			case 'csv': { 
+				$email_index = 4; 
+				$username_index = 2;
+				break; 
+			}
+			case 'xls': { 
+				$user_name_index = 3;
+				$email_index = 5; 
+				break; 
+			}
+		}
+
 		foreach ( $tmp_new_blogs as $idx => $tnb ) {
-			if ( ! in_array( $tnb[5], $emails ) ) {
-				$emails[ $tnb[3] ] = $tnb[5];
+			if ( ! in_array( $tnb[$email_index], $emails ) ) {
+				$emails[ $tnb[$user_name_index] ] = $tnb[$email_index];
 			}
 			else {
-				$uname = array_search( $tnb[5], $emails );
-				if ( $tnb[3] != $uname ) 
-					$not_unique[$tnb[5]] = ( isset( $not_unique[ $tnb[5] ] ) && $not_unique[ $tnb[5] ] ? $not_unique[ $tnb[5] ] . ', ' : $uname . ', ') . $tnb[3];
+				$uname = array_search( $tnb[$email_index], $emails );
+				if ( $tnb[$user_name_index] != $uname ) 
+					$not_unique[$tnb[$email_index]] = ( isset( $not_unique[ $tnb[$email_index] ] ) && $not_unique[ $tnb[$email_index] ] ? $not_unique[ $tnb[$email_index] ] . ', ' : $uname . ', ') . $tnb[$user_name_index];
 			}
 		}
 		

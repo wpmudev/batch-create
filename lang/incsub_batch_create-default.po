@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Origin Plugin\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-09-01 22:10+0100\n"
-"PO-Revision-Date: 2013-09-01 22:10+0100\n"
+"POT-Creation-Date: 2013-09-09 19:43+0100\n"
+"PO-Revision-Date: 2013-09-09 19:43+0100\n"
 "Last-Translator: Ignacio <igmoweb@gmail.com>\n"
 "Language-Team: igmoweb\n"
 "MIME-Version: 1.0\n"
@@ -13,79 +13,203 @@ msgstr ""
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SearchPath-0: ..\n"
 
-#: ../origin-plugin.php:161
-msgid "Main Menu"
+#: ../batch-create.php:150
+#: ../batch-create.php:151
+#: ../batch-create.php:155
+msgid "Batch Create"
 msgstr ""
 
-#: ../origin-plugin.php:162
-msgid "Main Page"
+#: ../batch-create.php:156
+msgid "Log File"
 msgstr ""
 
-#: ../origin-plugin.php:170
-msgid "Settings"
+#: ../admin/pages/network-main-page.php:34
+#, php-format
+msgid "<strong>Note:</strong> There are %d items (blogs/users) waiting to be processed. Click <a class=\"button-secondary\" href=\"%s\">here</a> to process the queue. If there is a problem, you can clear the queue by clicking <a href=\"%s\">here</a>."
 msgstr ""
 
-#: ../origin-plugin.php:171
-msgid "Origin Plugin Settings"
+#: ../admin/pages/network-main-page.php:53
+#, php-format
+msgid "You have %s old source file(s) stored on your system. These are no longer needed. <a href=\"%s\">Delete them now</a>"
 msgstr ""
 
-#: ../origin-plugin.php:173
-msgid "General Settings"
+#: ../admin/pages/network-main-page.php:65
+msgid "Instructions"
 msgstr ""
 
-#: ../origin-plugin.php:174
-msgid "Styles"
+#: ../admin/pages/network-main-page.php:66
+msgid "Batch create is designed for quickly creating sites and/or usernames or adding users to an existing site in batches of 10's, 100's or 1000's by uploading a .xls file."
 msgstr ""
 
-#: ../origin-plugin.php:182
-msgid "Main Network"
+#: ../admin/pages/network-main-page.php:69
+#, php-format
+msgid "Download <a href=\"%s\">this .xls</a> file and use it as a template to create your batch file."
 msgstr ""
 
-#: ../origin-plugin.php:183
-msgid "Main Network Page"
+#: ../admin/pages/network-main-page.php:70
+msgid "Once you've added sites and/or usernames to the template save your file as an Excel 97-2003 Workbook or a .csv file."
 msgstr ""
 
-#: ../admin/pages/admin-settings-page.php:26
-msgid "A general section"
+#: ../admin/pages/network-main-page.php:71
+msgid "Click on 'Choose File', locate your batch file, select 'This file has a header row', if you kept the first row in the template file, and click Upload."
 msgstr ""
 
-#: ../admin/pages/admin-settings-page.php:27
-msgid "A general field"
+#: ../admin/pages/network-main-page.php:72
+msgid "Once uploaded it is placed into a queue. You need to click on the link 'here' in 'Click here to process the queue.' to start creating the usernames and/or sites."
 msgstr ""
 
-#: ../admin/pages/admin-settings-page.php:30
-msgid "A styles section"
+#: ../admin/pages/network-main-page.php:73
+msgid "You'll see a status bar displaying their progress as they're being created/added."
 msgstr ""
 
-#: ../admin/pages/admin-settings-page.php:31
-msgid "A style field"
+#: ../admin/pages/network-main-page.php:74
+msgid "You can clear the queue by clicking on the link 'here' in 'you can clear the queue by clicking here."
 msgstr ""
 
-#: ../admin/pages/admin-settings-page.php:51
-msgid "Settings updated"
+#: ../admin/pages/network-main-page.php:75
+msgid "Here are the different ways you can use batch create:"
 msgstr ""
 
-#: ../admin/pages/admin-settings-page.php:84
-msgid "Please, insert an integer value"
+#: ../admin/pages/network-main-page.php:79
+msgid "Upload file"
 msgstr ""
 
-#: ../admin/pages/network-main-page.php:11
-msgid "A row"
+#: ../admin/pages/network-main-page.php:84
+msgid "This file has a header row"
 msgstr ""
 
-#: ../inc/admin-page.php:59
-msgid "Menu title"
+#: ../admin/pages/network-main-page.php:86
+msgid "If this box is checked, the first row in the file <strong>WILL NOT</strong> be processed."
 msgstr ""
 
-#: ../inc/admin-page.php:60
-msgid "Page title"
+#: ../admin/pages/network-main-page.php:89
+msgid "Upload"
 msgstr ""
 
-#: ../inc/admin-page.php:187
-msgid "You do not have enough permissions to access to this page"
+#: ../admin/pages/network-main-page.php:112
+msgid "Delete log file"
 msgstr ""
 
-#: ../inc/errors-handler.php:29
+#: ../admin/pages/network-main-page.php:125
+msgid "Items added to queue."
+msgstr ""
+
+#: ../admin/pages/network-main-page.php:128
+msgid "Queue cleared."
+msgstr ""
+
+#: ../admin/pages/network-main-page.php:131
+msgid "Old sources deleted"
+msgstr ""
+
+#: ../admin/pages/network-main-page.php:134
+msgid "Log file cleared"
+msgstr ""
+
+#: ../admin/pages/network-main-page.php:138
+#, php-format
+msgid "Queue processing complete. <a href=\"%s\">See log file.</a>"
+msgstr ""
+
+#: ../inc/creator.php:24
+#, php-format
+msgid "Unable to create directory %s. Is its parent directory writable by the server?"
+msgstr ""
+
+#: ../inc/creator.php:30
+#, php-format
+msgid "Unable to create log file %s. Is its parent directory writable by the server?"
+msgstr ""
+
+#: ../inc/creator.php:42
+msgid "You need to select a file"
+msgstr ""
+
+#: ../inc/creator.php:48
+msgid "The file type you uploaded is not supported. Please upload a .csv or .xls file."
+msgstr ""
+
+#: ../inc/creator.php:54
+msgid "Error uploading the file."
+msgstr ""
+
+#: ../inc/creator.php:60
+msgid "Error reading the uploaded file."
+msgstr ""
+
+#: ../inc/creator.php:123
+#, php-format
+msgid "Queue processing error. These emails are not unique: %s"
+msgstr ""
+
+#: ../inc/creator.php:128
+msgid "No data was retrieved from the file. Please verify its content."
+msgstr ""
+
+#: ../inc/creator.php:241
+msgid "Missing email address."
+msgstr ""
+
+#: ../inc/creator.php:245
+msgid "Invalid email address."
+msgstr ""
+
+#: ../inc/creator.php:290
+#, php-format
+msgid "The following words are reserved for use by WordPress functions and cannot be used as blog names: %s"
+msgstr ""
+
+#: ../inc/creator.php:296
+msgid "Missing or invalid site address."
+msgstr ""
+
+#: ../inc/creator.php:319
+#, php-format
+msgid "Blog (%s) already exists (%d), user can be added"
+msgstr ""
+
+#: ../inc/creator.php:322
+msgid "User role empty. The user could not have been added to the blog"
+msgstr ""
+
+#: ../inc/creator.php:331
+#, php-format
+msgid "Blog (%s) does NOT already exist, not adding user at this point"
+msgstr ""
+
+#: ../inc/creator.php:337
+#, php-format
+msgid "Blog (%s) does NOT exist yet"
+msgstr ""
+
+#: ../inc/creator.php:343
+msgid "Starting new blog creation"
+msgstr ""
+
+#: ../inc/creator.php:353
+msgid "New user is administrator"
+msgstr ""
+
+#: ../inc/creator.php:359
+#, php-format
+msgid ""
+"Attempting to create a new blog with this data:\n"
+"\tDomain: [%s]\n"
+"\tPath: [%s]\n"
+"\tTitle: [%s]\n"
+"\tAdmin user ID: [%s]\n"
+"\tOn site: [%s]"
+msgstr ""
+
+#: ../inc/creator.php:381
+msgid "Error creating blog: "
+msgstr ""
+
+#: ../inc/creator.php:414
+msgid "--- Queue item processing finished ---\n"
+msgstr ""
+
+#: ../inc/errors-handler.php:28
 #, php-format
 msgid "<b>%s plugin error</b>: %s"
 msgstr ""

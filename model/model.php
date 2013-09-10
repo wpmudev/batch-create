@@ -179,5 +179,18 @@ class Incsub_Batch_Create_Model {
 		);
 	}
 
+	public function get_queue_items( $current_page, $per_page ) {
+		global $wpdb, $current_site;
+
+		return $wpdb->get_results( 
+			$wpdb->prepare( 
+				"SELECT * FROM $this->table_name WHERE batch_create_site = %d LIMIT %d, %d", 
+				$current_site->id,
+				intval( ( $current_page - 1 ) * $per_page),
+				intval( $per_page )
+			), ARRAY_A
+		);
+	}
+
 
 }
