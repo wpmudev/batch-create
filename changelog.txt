@@ -5,6 +5,13 @@ Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
 
+1.3 - 2013-09-11 Ignacio Cruz
+----------------------------------------------------------------------
+- Plugin recoded
+- Added a new table where the queue is displayed
+- Better admin styles
+- Fixed problem with spanish characters
+- Added link to download a CSV
 
 1.2.3 - 11/25/2011 - Vladislav Bailovic
 ----------------------------------------------------------------------
