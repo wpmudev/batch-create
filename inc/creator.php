@@ -12,7 +12,7 @@ class Incsub_Batch_Create_Creator {
 		$this->log_file = $this->target_path . 'batch_create.log';
 		$this->log_file_url = $upload_dir['baseurl'] . '/batch-create/batch_create.log';
 
-		add_action( 'admin_notices', array( &$this, 'admin_notices' ) );
+		add_action( 'network_admin_notices', array( &$this, 'admin_notices' ) );
 		add_action( 'wp_ajax_process_queue', array( &$this, 'process_ajax_queue' ) );
 			
 	}
