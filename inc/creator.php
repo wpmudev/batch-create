@@ -330,7 +330,7 @@ class Incsub_Batch_Create_Creator {
 			$this->log(sprintf( 'Blog name is empty! Blog will NOT be created', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
 		}
 
-		$blog_id = get_id_from_blogname( $newdomain );
+		$blog_id = get_id_from_blogname( $domain );
 		$user_role = $queue_item->batch_create_user_role;
 		if( $blog_id ) { 
 
