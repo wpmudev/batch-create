@@ -117,11 +117,11 @@ class Incsub_Batch_Create_Creator {
 
 		foreach ( $tmp_new_blogs as $idx => $tnb ) {
 			if ( ! in_array( $tnb[$email_index], $emails ) ) {
-				$emails[ $tnb[$user_name_index] ] = $tnb[$email_index];
+				$emails[ $tnb[$username_index] ] = $tnb[$email_index];
 			}
 			else {
 				$uname = array_search( $tnb[$email_index], $emails );
-				if ( $tnb[$user_name_index] != $uname ) 
+				if ( $tnb[$username_index] != $uname ) 
 					$not_unique[$tnb[$email_index]] = ( isset( $not_unique[ $tnb[$email_index] ] ) && $not_unique[ $tnb[$email_index] ] ? $not_unique[ $tnb[$email_index] ] . ', ' : $uname . ', ') . $tnb[$user_name_index];
 			}
 		}
@@ -412,11 +412,10 @@ class Incsub_Batch_Create_Creator {
 
 			$this->log( 'Blog: ' . $newdomain . $path . ' created!' );
 		}
-		elseif ( $user_id && in_array( $blog_name, array( '', strtolower( 'null' ) ) ) ) {
+		elseif ( $user_id && in_array( $domain, array( '', strtolower( 'null' ) ) ) ) {
 			// If blog not explicitly requested, add user to main blog
 			$this->log( "There was no explicitly requested blogs; adding user to main blog" );
-			$result = add_user_to_blog( BLOG_ID_CURRENT_SITE, $user_id, $user_role );
-			$blog_id = BLOG_ID_CURRENT_SITE;
+			$result = add_user_to_blog( BLOG_ID_CURRENT_SITE, $user_id, 'subscriber' );
 		}
 
 		$model->delete_queue_item( $queue_item->batch_create_ID );

@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: Batch Create NEW
+Plugin Name: Batch Create
 Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: Ignacio (Incsub)
 Text Domain: batch_create
-Version: 1.3.2
+Version: 1.3.3
 Network: true
 Author URI: http://premium.wpmudev.org/
 WDP ID: 84
@@ -65,7 +65,7 @@ class Incsub_Batch_Create {
 		//TODO: Change the constant names
 
 		// Basics
-		define( 'INCSUB_BATCH_CREATE_VERSION', '1.3.2' );
+		define( 'INCSUB_BATCH_CREATE_VERSION', '1.3.3' );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_FILE_DIR', plugin_dir_path( __FILE__ ) . 'batch-create.php' );
