@@ -436,7 +436,10 @@ class Incsub_Batch_Create_Creator {
 	}
 
 	public function get_old_sources() {
-		$files = glob( $this->target_path . '*.{csv,xls}', GLOB_BRACE );
+		if ( defined( 'GLOB_BRACE' ) )
+			$files = glob( $this->target_path . '*.{csv,xls}', GLOB_BRACE );
+		else
+			$files = array_merge( glob( $this->target_path . '*.csv' ), glob( $this->target_path . '*.xls' ) );
 		return $files ? $files : array();
 	}
 
