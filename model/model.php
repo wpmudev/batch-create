@@ -71,7 +71,7 @@ class Incsub_Batch_Create_Model {
 	 * 
 	 * @since 0.1
 	 */
-	private function create_schema() {
+	public function create_schema() {
 		$this->create_queue_table();
 	}
 
@@ -82,16 +82,17 @@ class Incsub_Batch_Create_Model {
 	private function create_queue_table() {
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
-		$sql = "CREATE TABLE IF NOT EXISTS $this->queue (
-				  `batch_create_ID` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-				  `batch_create_site` bigint(20) DEFAULT NULL,
-				  `batch_create_blog_name` varchar(255) NOT NULL DEFAULT 'null',
-				  `batch_create_blog_title` varchar(255) NOT NULL DEFAULT 'null',
-				  `batch_create_user_name` varchar(255) NOT NULL DEFAULT 'null',
-				  `batch_create_user_pass` varchar(255) NOT NULL DEFAULT 'null',
-				  `batch_create_user_email` varchar(255) NOT NULL DEFAULT 'null',
-				  `batch_create_user_role` varchar(255) NOT NULL DEFAULT 'null',
-				  PRIMARY KEY (`batch_create_ID`)
+		$sql = "CREATE TABLE $this->queue (
+				  batch_create_ID bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				  batch_create_site bigint(20) DEFAULT NULL,
+				  batch_create_blog_name varchar(255) NOT NULL DEFAULT 'null',
+				  batch_create_blog_title varchar(255) NOT NULL DEFAULT 'null',
+				  batch_create_user_name varchar(255) NOT NULL DEFAULT 'null',
+				  batch_create_user_pass varchar(255) NOT NULL DEFAULT 'null',
+				  batch_create_user_email varchar(255) NOT NULL DEFAULT 'null',
+				  batch_create_user_role varchar(255) NOT NULL DEFAULT 'null',
+				  batch_create_welcome_email tinyint(1) DEFAULT 1,
+				  PRIMARY KEY (batch_create_ID)
 				) ENGINE=InnoDB $this->db_charset_collate;";
        	
         dbDelta($sql);
@@ -149,8 +150,8 @@ class Incsub_Batch_Create_Model {
 		$wpdb->query( 
 			$wpdb->prepare( 
 				"INSERT INTO $this->queue 
-				( batch_create_site, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email, batch_create_user_role ) 
-				VALUES ( %d, %s, %s, %s, %s, %s, %s )", 
+				( batch_create_site, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email, batch_create_user_role, batch_create_welcome_email ) 
+				VALUES ( %d, %s, %s, %s, %s, %s, %s, %d )", 
 				$args 
 			) 
 		);

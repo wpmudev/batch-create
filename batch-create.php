@@ -3,9 +3,9 @@
 Plugin Name: Batch Create
 Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
-Author: Ignacio (Incsub)
+Author: WPMU DEV
 Text Domain: batch_create
-Version: 1.3.3
+Version: 1.4
 Network: true
 Author URI: http://premium.wpmudev.org/
 WDP ID: 84
@@ -65,7 +65,7 @@ class Incsub_Batch_Create {
 		//TODO: Change the constant names
 
 		// Basics
-		define( 'INCSUB_BATCH_CREATE_VERSION', '1.3.3' );
+		define( 'INCSUB_BATCH_CREATE_VERSION', '1.4' );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_FILE_DIR', plugin_dir_path( __FILE__ ) . 'batch-create.php' );
@@ -108,12 +108,13 @@ class Incsub_Batch_Create {
 		$current_version = get_site_option( self::$version_option_slug );
 
 		if ( ! $current_version )
-			$current_version = '1.2.3'; // This is the first version that includes some upgradings
-
+			$current_version = '1.3.3'; // This is the first version that includes some upgradings
+		
 		// For the second version, we're just saving the version in DB
-		if ( version_compare( $current_version, '1.2.3', '<=' ) ) {
+		if ( version_compare( $current_version, '1.4', '<' ) ) {
 			require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'upgrade.php' );
-			// Call upgrade functions here
+			batch_create_upgrade_14();
+			update_site_option( self::$version_option_slug, '1.4' );
 		}
 
 		//update_site_option( self::$version_option_slug, INCSUB_BATCH_CREATE_VERSION );

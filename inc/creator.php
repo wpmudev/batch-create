@@ -36,7 +36,7 @@ class Incsub_Batch_Create_Creator {
 			Incsub_Batch_Create_Errors_Handler::show_error_notice( $error );
 	}
 
-	public function process_file( $file, $first_column = true, $uploaded = true ) {
+	public function process_file( $file, $first_column = true, $uploaded = true, $welcome_email = true ) {
 		$file_name = basename( $file['name'] );
 		if ( empty( $file_name ) ) {
 			Incsub_Batch_Create_Errors_Handler::add_error( 'empty_file', __( 'You need to select a file', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
@@ -151,9 +151,11 @@ class Incsub_Batch_Create_Creator {
 				in_array($details_count, array(5, 6)) // if there are 5 or 6 entries on the line
 				|| $details_count > 6 // assume a row padded with empty columns
 			) {
+
 				if ( ! count( array_filter( $tmp_new_blog ) ) ) 
 					continue; // Every single field is empty - continue
 
+				$tmp_new_blog[] = $welcome_email;
 				$model = batch_create_get_model();
 				$model->insert_queue( $tmp_new_blog );
 			}
@@ -423,7 +425,7 @@ class Incsub_Batch_Create_Creator {
 			if ( ! is_super_admin( $admin_id ) && ! get_user_option( 'primary_blog', $admin_id ) )
 				update_user_option( $admin_id, 'primary_blog', $blog_id, true );
 
-			$send = true;
+			$send = $queue_item->batch_create_blog_title ? true : false;
 			$send = apply_filters( 'batch_create_send_welcome_notification', $send, $blog_id );
 
 			if ( ! empty( $password ) && $send )

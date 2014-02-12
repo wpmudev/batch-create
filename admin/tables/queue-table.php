@@ -57,15 +57,20 @@ class Batch_Create_Queue_Table extends WP_List_Table {
         return $item['batch_create_user_role'];
     }
 
+    function column_welcome_email( $item ) {
+        return $item['batch_create_welcome_email'] ? __( 'Yes' ) : __( 'No' );
+    }
+
     function get_columns(){
         $columns = array(
-            'cb'            => '<input type="checkbox" />', //Render a checkbox instead of text
-            'blogname'      => __( 'Blog name', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
-            'blogtitle'     => __( 'Blog title', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
-            'username'      => __( 'Username', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
-            'userpass'      => __( 'User password', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
-            'user_email'    => __( 'User email', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
-            'user_role'  	=> __( 'User role', INCSUB_BATCH_CREATE_LANG_DOMAIN )
+            'cb'                => '<input type="checkbox" />', //Render a checkbox instead of text
+            'blogname'          => __( 'Blog name', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
+            'blogtitle'         => __( 'Blog title', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
+            'username'          => __( 'Username', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
+            'userpass'          => __( 'User password', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
+            'user_email'        => __( 'User email', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
+            'user_role'         => __( 'User role', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
+            'welcome_email'  	=> __( 'Send welcome email', INCSUB_BATCH_CREATE_LANG_DOMAIN )
         );
         return $columns;
     }

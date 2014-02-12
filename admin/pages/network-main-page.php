@@ -55,11 +55,17 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 			<h3><?php _e( 'Upload file', INCSUB_BATCH_CREATE_LANG_DOMAIN ); ?></h3>
 			<form action="<?php echo esc_url( $form_url ); ?>" method="post" enctype="multipart/form-data">
 				<input type="file" name="csv_file" id="csv_file" size="20" /><br/><br/>
+
+				<label for="disable_welcome_email">
+					<input type="checkbox" name="disable_welcome_email" id="disable_welcome_email" value="1" /> 
+					<?php _e('Do not send welcome email to users', INCSUB_BATCH_CREATE_LANG_DOMAIN );?>
+				</label><br/><br/>
+
 				<label for="header_row_yn">
 					<input type="checkbox" name="header_row_yn" id="header_row_yn" value="1" /> 
 					<?php _e('This file has a header row', INCSUB_BATCH_CREATE_LANG_DOMAIN );?>
-				</label>
-				<p><span class="description"><?php _e( 'If this box is checked, the first row in the file <strong>WILL NOT</strong> be processed.', INCSUB_BATCH_CREATE_LANG_DOMAIN );?></span></p>
+				</label><br/>
+				<span class="description"><?php _e( 'If this box is checked, the first row in the file <strong>WILL NOT</strong> be processed.', INCSUB_BATCH_CREATE_LANG_DOMAIN );?></span>
 					  
 				<?php wp_nonce_field( 'upload_batch_file' ); ?>
 				<?php submit_button( __( 'Upload', INCSUB_BATCH_CREATE_LANG_DOMAIN ) ); ?>
@@ -168,9 +174,10 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 					return;	
 
 				$header_row = ! isset( $_POST['header_row_yn'] );
+				$welcome_email = ! isset( $_POST['disable_welcome_email'] );
 
 				$creator = batch_create_get_creator();
-				$done = $creator->process_file( $_FILES['csv_file'], $header_row );
+				$done = $creator->process_file( $_FILES['csv_file'], $header_row, true, $welcome_email );
 
 				if ( ! $done )
 					return;
