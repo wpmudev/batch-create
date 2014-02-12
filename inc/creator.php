@@ -2,7 +2,7 @@
 
 class Incsub_Batch_Create_Creator {
 
-	private $target_path;
+	public $target_path;
 	private $log_file;
 	private $log_file_url;
 
@@ -36,7 +36,7 @@ class Incsub_Batch_Create_Creator {
 			Incsub_Batch_Create_Errors_Handler::show_error_notice( $error );
 	}
 
-	public function process_file( $file, $first_column = true ) {
+	public function process_file( $file, $first_column = true, $uploaded = true ) {
 		$file_name = basename( $file['name'] );
 		if ( empty( $file_name ) ) {
 			Incsub_Batch_Create_Errors_Handler::add_error( 'empty_file', __( 'You need to select a file', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
@@ -50,7 +50,7 @@ class Incsub_Batch_Create_Creator {
 		}
 
 		$file_path = $this->target_path . $file_name;
-		if( ! move_uploaded_file( $file['tmp_name'], $file_path ) ) { // file not moved in upload directory
+		if( $uploaded && ! move_uploaded_file( $file['tmp_name'], $file_path ) ) { // file not moved in upload directory
 			Incsub_Batch_Create_Errors_Handler::add_error( 'file_type', __( 'Error uploading the file.', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
 			return false;
 		}
@@ -97,7 +97,8 @@ class Incsub_Batch_Create_Creator {
 		if ( ! $first_column )
 			array_shift( $tmp_new_blogs );
 
-		@unlink( $file_path ); // Kill the file, we got the array
+		if ( $uploaded )
+			@unlink( $file_path ); // Kill the file, we got the array
 
 		$emails = array();
 		$not_unique = array();
@@ -230,13 +231,31 @@ class Incsub_Batch_Create_Creator {
 
 	}
 
+	public function process_full_queue() {
+		set_time_limit(360); // Try to give the script plenty of time to run
+
+		$model = batch_create_get_model();
+		$queue_item = $model->get_queue_item();
+		while( ! empty( $queue_item ) ) {
+			$model->delete_queue_item( $queue_item->batch_create_ID );
+			$this->process_queue_item( $queue_item );
+			$queue_item = $model->get_queue_item();
+		}
+	}
+
 	public function process_ajax_queue() {
-		global $current_site;
-
-
 		set_time_limit(180); // Try to give the script plenty of time to run
 		$model = batch_create_get_model();
 		$queue_item = $model->get_queue_item();
+		if ( ! empty( $queue_item->batch_create_ID ) ) {
+			$result = $this->process_queue_item( $queue_item );
+			$model->delete_queue_item( $queue_item->batch_create_ID );
+		}
+		$this->ajax_die();
+	}
+
+	public function process_queue_item( $queue_item ) {
+		global $current_site;
 
 		$this->log(
 			sprintf(
@@ -253,11 +272,11 @@ class Incsub_Batch_Create_Creator {
 
 		if ( empty( $email ) ) {
 			$this->log( __( 'Missing email address.', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
-			$this->ajax_die();
+			return false;
 		}
 		if ( ! is_email( $email ) ) {
 			$this->log( __( 'Invalid email address.', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
-			$this->ajax_die();
+			return false;
 		}
 
 		// USER
@@ -279,7 +298,7 @@ class Incsub_Batch_Create_Creator {
 			$user_id = wp_create_user( $user_name, $password, $email );
 			if ( is_wp_error( $user_id ) ) {
 				$this->log( $user_id->get_error_message() );
-				$this->ajax_die();
+				return false;
 			}
 
 			// Newly created users have no roles or caps until they are added to a blog.
@@ -307,13 +326,13 @@ class Incsub_Batch_Create_Creator {
 			$subdirectory_reserved_names = apply_filters( 'subdirectory_reserved_names', array( 'page', 'comments', 'blog', 'files', 'feed' ) );
 			if ( in_array( $domain, $subdirectory_reserved_names ) ) {
 				$this->log( sprintf( __('The following words are reserved for use by WordPress functions and cannot be used as blog names: %s' ), implode( ', ', $subdirectory_reserved_names ) ) );
-				$this->ajax_die();
+				return false;
 			}
 		}
 
 		if ( empty( $domain ) ) {
 			$this->log( __( 'Missing or invalid site address.' ) );
-			$this->ajax_die();
+			return false;
 		}
 
 		if ( is_subdomain_install() ) {
@@ -339,7 +358,7 @@ class Incsub_Batch_Create_Creator {
 
 			if ( empty( $user_role ) ) {
 				$this->log( __( "User role empty. The user could not have been added to the blog", INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
-				$this->ajax_die();
+				return false;
 			}
 
 			if( ! empty( $user_role ) && add_user_to_blog( $blog_id, $user_id, $user_role ) ) { 
@@ -349,7 +368,7 @@ class Incsub_Batch_Create_Creator {
 			else {
 				$this->log( sprintf( __( 'Blog (%s) does NOT already exist, not adding user at this point', INCSUB_BATCH_CREATE_LANG_DOMAIN ), $newdomain ), 'debug');
 				$this->log( __( "Unable to add user $batch_create_user_name to blog {$newdomain}{$path}", INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
-				$this->ajax_die();
+				return false;
 			}
 		}
 		else {
@@ -398,7 +417,7 @@ class Incsub_Batch_Create_Creator {
 
 			if ( is_wp_error( $blog_id ) ) {
 				$this->log( __( 'Error creating blog: ' . $newdomain . $path . ' - ' . $blog_id->get_error_message(), INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
-				$this->ajax_die();
+				return false;
 			}
 
 			if ( ! is_super_admin( $admin_id ) && ! get_user_option( 'primary_blog', $admin_id ) )
@@ -418,8 +437,7 @@ class Incsub_Batch_Create_Creator {
 			$result = add_user_to_blog( BLOG_ID_CURRENT_SITE, $user_id, 'subscriber' );
 		}
 
-		$model->delete_queue_item( $queue_item->batch_create_ID );
-		$this->ajax_die();
+		return true;
 	}
 
 	/**

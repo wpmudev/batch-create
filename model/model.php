@@ -19,7 +19,8 @@ class Incsub_Batch_Create_Model {
 	public $schema_created_option_slug = 'batch_create_installed';
 
 	// Tables names
-	private $table_name;
+	private $queue;
+	private $queue_meta;
 
 	// Charset and Collate
 	private $db_charset_collate;
@@ -47,7 +48,8 @@ class Incsub_Batch_Create_Model {
 		global $wpdb;
 
 		// TODO: Change tables names
-		$this->table_name = $wpdb->base_prefix . 'batch_create_queue';
+		$this->queue = $wpdb->base_prefix . 'batch_create_queue';
+		$this->queue_meta = $wpdb->base_prefix . 'batch_create_queue_meta';
 
 		// Get the correct character collate
         $db_charset_collate = '';
@@ -70,17 +72,17 @@ class Incsub_Batch_Create_Model {
 	 * @since 0.1
 	 */
 	private function create_schema() {
-		$this->create_table();
+		$this->create_queue_table();
 	}
 
 	/**
 	 * Create the table 1
 	 * @return type
 	 */
-	private function create_table() {
+	private function create_queue_table() {
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
-		$sql = "CREATE TABLE IF NOT EXISTS $this->table_name (
+		$sql = "CREATE TABLE IF NOT EXISTS $this->queue (
 				  `batch_create_ID` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 				  `batch_create_site` bigint(20) DEFAULT NULL,
 				  `batch_create_blog_name` varchar(255) NOT NULL DEFAULT 'null',
@@ -95,20 +97,35 @@ class Incsub_Batch_Create_Model {
         dbDelta($sql);
 	}
 
+	private function create_queue_meta_table() {
+		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+
+		$sql = "CREATE TABLE IF NOT EXISTS $this->queue_meta (
+				  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
+				  `queue_id` bigint(20) unsigned NOT NULL,
+				  `meta_key` bigint(20) DEFAULT NULL,
+				  `meta_value` varchar(255) NOT NULL DEFAULT '',
+				  PRIMARY KEY (`ID`)
+				) ENGINE=InnoDB $this->db_charset_collate;";
+       	
+        dbDelta($sql);
+	}
+
 	/**
 	 * Drop the schema
 	 */
 	public function delete_tables() {
 		global $wpdb;
 
-		$wpdb->query( "DROP TABLE $this->table_name;" );
+		$wpdb->query( "DROP TABLE $this->queue;" );
+		$wpdb->query( "DROP TABLE $this->queue_meta;" );
 	}
 
 	public function get_pending_queue_count() {
 		global $wpdb, $current_site;
 
 		return $wpdb->get_var( 
-			$wpdb->prepare( "SELECT COUNT(*) FROM $this->table_name WHERE batch_create_site = %d", $current_site->id ) 
+			$wpdb->prepare( "SELECT COUNT(*) FROM $this->queue WHERE batch_create_site = %d", $current_site->id ) 
 		);
 	}
 
@@ -131,7 +148,7 @@ class Incsub_Batch_Create_Model {
 
 		$wpdb->query( 
 			$wpdb->prepare( 
-				"INSERT INTO $this->table_name 
+				"INSERT INTO $this->queue 
 				( batch_create_site, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email, batch_create_user_role ) 
 				VALUES ( %d, %s, %s, %s, %s, %s, %s )", 
 				$args 
@@ -144,7 +161,7 @@ class Incsub_Batch_Create_Model {
 
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM $this->table_name WHERE batch_create_site = %d",
+				"DELETE FROM $this->queue WHERE batch_create_site = %d",
 				$current_site->id
 			)
 		);
@@ -154,7 +171,7 @@ class Incsub_Batch_Create_Model {
 		global $wpdb, $current_site;
 
 		return $wpdb->get_row( 
-			$wpdb->prepare( "SELECT * FROM $this->table_name WHERE batch_create_site = %d", $current_site->id )
+			$wpdb->prepare( "SELECT * FROM $this->queue WHERE batch_create_site = %d", $current_site->id )
 		);
 	}
 
@@ -163,7 +180,7 @@ class Incsub_Batch_Create_Model {
 
 		return $wpdb->get_var( 
 			$wpdb->prepare( 
-				"SELECT COUNT(*) FROM $this->table_name WHERE batch_create_site = %d", $current_site->id 
+				"SELECT COUNT(*) FROM $this->queue WHERE batch_create_site = %d", $current_site->id 
 			) 
 		);
 	}
@@ -173,7 +190,7 @@ class Incsub_Batch_Create_Model {
 
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM $this->table_name WHERE batch_create_ID = %d",
+				"DELETE FROM $this->queue WHERE batch_create_ID = %d",
 				$id
 			)
 		);
@@ -184,12 +201,36 @@ class Incsub_Batch_Create_Model {
 
 		return $wpdb->get_results( 
 			$wpdb->prepare( 
-				"SELECT * FROM $this->table_name WHERE batch_create_site = %d LIMIT %d, %d", 
+				"SELECT * FROM $this->queue WHERE batch_create_site = %d LIMIT %d, %d", 
 				$current_site->id,
 				intval( ( $current_page - 1 ) * $per_page),
 				intval( $per_page )
 			), ARRAY_A
 		);
+	}
+
+	public function add_queue_meta( $meta_key, $meta_value ) {
+		global $wpdb;
+
+
+	}
+
+	public function update_queue_meta( $meta_key, $meta_value ) {
+		global $wpdb;
+
+
+	}
+
+	public function delete_queue_meta( $meta_key ) {
+		global $wpdb;
+
+
+	}
+
+	public function get_queue_meta( $meta_key ) {
+		global $wpdb;
+
+		$result = $wpdb->get_var( );
 	}
 
 
