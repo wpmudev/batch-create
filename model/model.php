@@ -49,7 +49,7 @@ class Incsub_Batch_Create_Model {
 
 		// TODO: Change tables names
 		$this->queue = $wpdb->base_prefix . 'batch_create_queue';
-		$this->queue_meta = $wpdb->base_prefix . 'batch_create_queue_meta';
+		$this->queue_meta = $wpdb->base_prefix . 'batch_create_queuemeta';
 
 		// Get the correct character collate
         $db_charset_collate = '';
@@ -73,6 +73,7 @@ class Incsub_Batch_Create_Model {
 	 */
 	public function create_schema() {
 		$this->create_queue_table();
+		$this->create_queue_meta_table();
 	}
 
 	/**
@@ -91,8 +92,7 @@ class Incsub_Batch_Create_Model {
 				  batch_create_user_pass varchar(255) NOT NULL DEFAULT 'null',
 				  batch_create_user_email varchar(255) NOT NULL DEFAULT 'null',
 				  batch_create_user_role varchar(255) NOT NULL DEFAULT 'null',
-				  batch_create_welcome_email tinyint(1) DEFAULT 1,
-				  PRIMARY KEY (batch_create_ID)
+				  PRIMARY KEY  (batch_create_ID)
 				) ENGINE=InnoDB $this->db_charset_collate;";
        	
         dbDelta($sql);
@@ -102,11 +102,13 @@ class Incsub_Batch_Create_Model {
 		require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
 
 		$sql = "CREATE TABLE IF NOT EXISTS $this->queue_meta (
-				  `ID` bigint(20) NOT NULL AUTO_INCREMENT,
-				  `queue_id` bigint(20) unsigned NOT NULL,
-				  `meta_key` bigint(20) DEFAULT NULL,
-				  `meta_value` varchar(255) NOT NULL DEFAULT '',
-				  PRIMARY KEY (`ID`)
+				  meta_id bigint(20) NOT NULL AUTO_INCREMENT,
+				  batch_create_queue_id bigint(20) NOT NULL,
+				  meta_key varchar(255) DEFAULT NULL,
+				  meta_value longtext,
+				  PRIMARY KEY  (meta_id),
+				  KEY batch_create_queue_id (batch_create_queue_id),
+  				  KEY meta_key (meta_key)
 				) ENGINE=InnoDB $this->db_charset_collate;";
        	
         dbDelta($sql);
@@ -122,13 +124,19 @@ class Incsub_Batch_Create_Model {
 		$wpdb->query( "DROP TABLE $this->queue_meta;" );
 	}
 
-	public function get_pending_queue_count() {
+
+	public function count_queue_items() {
 		global $wpdb, $current_site;
 
-		return $wpdb->get_var( 
-			$wpdb->prepare( "SELECT COUNT(*) FROM $this->queue WHERE batch_create_site = %d", $current_site->id ) 
+		$result = $wpdb->get_var( 
+			$wpdb->prepare( 
+				"SELECT COUNT(*) FROM $this->queue WHERE batch_create_site = %d", $current_site->id 
+			) 
 		);
+
+		return absint( $result );
 	}
+
 
 	/**
 	 * Add entry into the database
@@ -138,34 +146,34 @@ class Incsub_Batch_Create_Model {
 	function insert_queue( $args ) {
 		global $wpdb, $current_site;
 
-		// add current site id as first argument
 		array_unshift( $args, $current_site->id );
-
-		// args array should always have 7 args
-		for( $i = 0; $i < 7; $i++ )
-			$args[$i] = isset( $args[$i] ) ? $args[$i] : '';
 
 		$args[2] = iconv( "Windows-1252", "UTF-8", $args[2] );
 
-		$wpdb->query( 
-			$wpdb->prepare( 
-				"INSERT INTO $this->queue 
-				( batch_create_site, batch_create_blog_name, batch_create_blog_title, batch_create_user_name, batch_create_user_pass, batch_create_user_email, batch_create_user_role, batch_create_welcome_email ) 
-				VALUES ( %d, %s, %s, %s, %s, %s, %s, %d )", 
-				$args 
-			) 
+		$wpdb->insert(
+			$this->queue,
+			array(
+				'batch_create_site'			=> $args[0],
+				'batch_create_blog_name'	=> $args[1],
+				'batch_create_blog_title'	=> $args[2],
+				'batch_create_user_name'	=> $args[3],
+				'batch_create_user_pass'	=> $args[4],
+				'batch_create_user_email'	=> $args[5],
+				'batch_create_user_role'	=> $args[6],
+			),
+			array(  '%d', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
+
+		return $wpdb->insert_id;
+
 	}
 
 	function clear_queue() {
-		global $wpdb, $current_site;
-
-		$wpdb->query(
-			$wpdb->prepare(
-				"DELETE FROM $this->queue WHERE batch_create_site = %d",
-				$current_site->id
-			)
-		);
+		$queue_item = $this->get_queue_item();
+		while( ! empty( $queue_item ) ) {
+			$this->delete_queue_item( $queue_item->batch_create_ID );
+			$queue_item = $this->get_queue_item();
+		}
 	}
 
 	public function get_queue_item() {
@@ -176,16 +184,7 @@ class Incsub_Batch_Create_Model {
 		);
 	}
 
-	public function count_queue_items() {
-		global $wpdb, $current_site;
-
-		return $wpdb->get_var( 
-			$wpdb->prepare( 
-				"SELECT COUNT(*) FROM $this->queue WHERE batch_create_site = %d", $current_site->id 
-			) 
-		);
-	}
-
+	
 	public function delete_queue_item( $id ) {
 		global $wpdb;
 
@@ -195,6 +194,19 @@ class Incsub_Batch_Create_Model {
 				$id
 			)
 		);
+
+		$meta_keys = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT meta_key FROM $this->queue_meta WHERE batch_create_queue_id = %d",
+				$id
+			)
+		);
+
+		if ( ! empty( $meta_keys ) ) {
+			foreach ( $meta_keys as $meta_key ) {
+				batch_create_delete_queue_meta( $id, $meta_key );
+			}
+		}
 	}
 
 	public function get_queue_items( $current_page, $per_page ) {

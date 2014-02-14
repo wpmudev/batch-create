@@ -36,7 +36,7 @@ class Incsub_Batch_Create_Creator {
 			Incsub_Batch_Create_Errors_Handler::show_error_notice( $error );
 	}
 
-	public function process_file( $file, $first_column = true, $uploaded = true, $welcome_email = true ) {
+	public function process_file( $file, $first_column = true, $uploaded = true ) {
 		$file_name = basename( $file['name'] );
 		if ( empty( $file_name ) ) {
 			Incsub_Batch_Create_Errors_Handler::add_error( 'empty_file', __( 'You need to select a file', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
@@ -144,6 +144,7 @@ class Incsub_Batch_Create_Creator {
 			return false;
 		}
 
+
 		// process data
 		foreach( $tmp_new_blogs as $tmp_new_blog ) {
 			$details_count = count( $tmp_new_blog );
@@ -155,9 +156,10 @@ class Incsub_Batch_Create_Creator {
 				if ( ! count( array_filter( $tmp_new_blog ) ) ) 
 					continue; // Every single field is empty - continue
 
-				$tmp_new_blog[] = $welcome_email;
 				$model = batch_create_get_model();
-				$model->insert_queue( $tmp_new_blog );
+
+				$queue_item_id = $model->insert_queue( $tmp_new_blog );
+				do_action( 'batch_create_queue_item_inserted', $queue_item_id );
 			}
 
 		}
@@ -289,12 +291,15 @@ class Incsub_Batch_Create_Creator {
 			$user_id = $user->ID;
 		}
 		else {
+			do_action( 'batch_create_before_create_user', $queue_item );
 			$password = 'N/A';
 			if ( '' == $queue_item->batch_create_user_pass || 'null' == strtolower( $queue_item->batch_create_user_pass ) )
 				$password = wp_generate_password( 12, false );
 			else
 				$password = $queue_item->batch_create_user_pass;
 
+			$password = apply_filters( 'batch_create_new_user_password', $password, $queue_item );
+			
 			$user_name = preg_replace( '/\s+/', '', sanitize_user( $queue_item->batch_create_user_name, true ) );
 
 			$user_id = wp_create_user( $user_name, $password, $email );
@@ -316,6 +321,7 @@ class Incsub_Batch_Create_Creator {
 				wp_new_user_notification( $user_id, $password );
 
 			$this->log( "User: $user_name created!" );
+			do_action( 'batch_create_after_create_user', $queue_item, $user_id );
 		}
 
 
@@ -425,8 +431,7 @@ class Incsub_Batch_Create_Creator {
 			if ( ! is_super_admin( $admin_id ) && ! get_user_option( 'primary_blog', $admin_id ) )
 				update_user_option( $admin_id, 'primary_blog', $blog_id, true );
 
-			$send = $queue_item->batch_create_blog_title ? true : false;
-			$send = apply_filters( 'batch_create_send_welcome_notification', $send, $blog_id );
+			$send = apply_filters( 'batch_create_send_welcome_notification', true, $blog_id );
 
 			if ( ! empty( $password ) && $send )
 				wpmu_welcome_notification( $blog_id, $admin_id, $password, $blog_title, array( 'public' => 1 ) );

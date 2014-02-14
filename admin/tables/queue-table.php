@@ -57,10 +57,17 @@ class Batch_Create_Queue_Table extends WP_List_Table {
         return $item['batch_create_user_role'];
     }
 
-    function column_welcome_email( $item ) {
-        return $item['batch_create_welcome_email'] ? __( 'Yes' ) : __( 'No' );
+    function column_meta( $item ) {
+        $meta = batch_create_get_queue_meta( $item['batch_create_ID'] );
+        if ( ! empty ( $meta ) && is_array( $meta ) ) {
+            foreach( $meta as $meta_key => $value  ) {
+                echo '<span style="display:inline-block;vertical-align:middle">' . $meta_key . '</span>';
+                ?>
+                    <input type="text" disabled size="4" value ="<?php echo esc_attr( print_r( batch_create_get_queue_meta( $item['batch_create_ID'], $meta_key, true ), true ) ); ?>"><br/>
+                <?php
+            }
+        }
     }
-
     function get_columns(){
         $columns = array(
             'cb'                => '<input type="checkbox" />', //Render a checkbox instead of text
@@ -70,8 +77,12 @@ class Batch_Create_Queue_Table extends WP_List_Table {
             'userpass'          => __( 'User password', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
             'user_email'        => __( 'User email', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
             'user_role'         => __( 'User role', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
-            'welcome_email'  	=> __( 'Send welcome email', INCSUB_BATCH_CREATE_LANG_DOMAIN )
+            'meta'  	        => __( 'Additional options', INCSUB_BATCH_CREATE_LANG_DOMAIN )
         );
+
+        if ( ! isset( $_GET['display_meta'] ) )
+            unset( $columns['meta'] );
+
         return $columns;
     }
 

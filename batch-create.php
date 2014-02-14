@@ -109,7 +109,7 @@ class Incsub_Batch_Create {
 
 		if ( ! $current_version )
 			$current_version = '1.3.3'; // This is the first version that includes some upgradings
-		
+
 		// For the second version, we're just saving the version in DB
 		if ( version_compare( $current_version, '1.4', '<' ) ) {
 			require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'upgrade.php' );
@@ -145,7 +145,10 @@ class Incsub_Batch_Create {
 	 * Initialize the plugin
 	 */
 	public function init_plugin() {
+		global $wpdb;
 
+		$wpdb->batch_create_queuemeta = $wpdb->base_prefix . 'batch_create_queuemeta';
+		
 		// A network menu
 		$args = array(
 			'parent' => 'settings.php',
