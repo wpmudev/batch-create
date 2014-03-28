@@ -222,29 +222,4 @@ class Incsub_Batch_Create_Model {
 		);
 	}
 
-	public function add_queue_meta( $meta_key, $meta_value ) {
-		global $wpdb;
-
-
-	}
-
-	public function update_queue_meta( $meta_key, $meta_value ) {
-		global $wpdb;
-
-
-	}
-
-	public function delete_queue_meta( $meta_key ) {
-		global $wpdb;
-
-
-	}
-
-	public function get_queue_meta( $meta_key ) {
-		global $wpdb;
-
-		$result = $wpdb->get_var( );
-	}
-
-
 }

@@ -17,6 +17,10 @@ class Batch_Create_Queue_Table extends WP_List_Table {
         
     }
 
+    function column_default($item, $column) {
+        return apply_filters( 'batch_create_display_queue_column', '', $column, $item );
+    }
+
     function column_cb($item){
         return sprintf(
             '<input type="checkbox" name="%1$s[]" value="%2$s" />',
@@ -69,7 +73,7 @@ class Batch_Create_Queue_Table extends WP_List_Table {
         }
     }
     function get_columns(){
-        $columns = array(
+        $columns = apply_filters( 'batch_create_queue_columns', array(
             'cb'                => '<input type="checkbox" />', //Render a checkbox instead of text
             'blogname'          => __( 'Blog name', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
             'blogtitle'         => __( 'Blog title', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
@@ -78,7 +82,7 @@ class Batch_Create_Queue_Table extends WP_List_Table {
             'user_email'        => __( 'User email', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
             'user_role'         => __( 'User role', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
             'meta'  	        => __( 'Additional options', INCSUB_BATCH_CREATE_LANG_DOMAIN )
-        );
+        ));
 
         if ( ! isset( $_GET['display_meta'] ) )
             unset( $columns['meta'] );

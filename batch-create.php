@@ -94,7 +94,7 @@ class Incsub_Batch_Create {
 		require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'admin-page.php' );
 		require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'errors-handler.php' );
 		require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'helpers.php' );
-		require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'creator.php' );
+		require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'integration.php' );
 
 		// Admin Pages
 		require_once( INCSUB_BATCH_CREATE_ADMIN_DIR . 'pages/network-main-page.php' );
@@ -147,6 +147,8 @@ class Incsub_Batch_Create {
 	public function init_plugin() {
 		global $wpdb;
 
+		require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'creator.php' );
+		
 		$wpdb->batch_create_queuemeta = $wpdb->base_prefix . 'batch_create_queuemeta';
 		
 		// A network menu

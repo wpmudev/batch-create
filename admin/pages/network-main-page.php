@@ -52,6 +52,8 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 				<img src="<?php echo INCSUB_BATCH_CREATE_ASSETS_URL . 'images/batchcreateex.jpg'; ?>" />
 			</ol>
 
+			<?php do_action( 'batch_create_instructions' ); ?>
+
 			<h3><?php _e( 'Upload file', INCSUB_BATCH_CREATE_LANG_DOMAIN ); ?></h3>
 			<form action="<?php echo esc_url( $form_url ); ?>" method="post" enctype="multipart/form-data">
 				<table class="form-table">

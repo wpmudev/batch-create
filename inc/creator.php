@@ -144,7 +144,6 @@ class Incsub_Batch_Create_Creator {
 			return false;
 		}
 
-
 		// process data
 		foreach( $tmp_new_blogs as $tmp_new_blog ) {
 			$details_count = count( $tmp_new_blog );
@@ -156,10 +155,12 @@ class Incsub_Batch_Create_Creator {
 				if ( ! count( array_filter( $tmp_new_blog ) ) ) 
 					continue; // Every single field is empty - continue
 
+				$tmp_new_blog = array_values($tmp_new_blog);
+
 				$model = batch_create_get_model();
 
 				$queue_item_id = $model->insert_queue( $tmp_new_blog );
-				do_action( 'batch_create_queue_item_inserted', $queue_item_id );
+				do_action( 'batch_create_queue_item_inserted', $queue_item_id, $tmp_new_blog );
 			}
 
 		}
@@ -372,12 +373,15 @@ class Incsub_Batch_Create_Creator {
 			if( ! empty( $user_role ) && add_user_to_blog( $blog_id, $user_id, $user_role ) ) { 
 				// add user to blog
 				$this->log( __( "User $user_name successfully added to blog {$newdomain}{$path}",INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
+				do_action( 'batch_create_user_added_to_blog', $blog_id, $user_id, $user_role, $queue_item );
 			} 
 			else {
 				$this->log( sprintf( __( 'Blog (%s) does NOT already exist, not adding user at this point', INCSUB_BATCH_CREATE_LANG_DOMAIN ), $newdomain ), 'debug');
 				$this->log( __( "Unable to add user $batch_create_user_name to blog {$newdomain}{$path}", INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
 				return false;
 			}
+
+
 		}
 		else {
 			$this->log( sprintf( __( "Blog (%s) does NOT exist yet", INCSUB_BATCH_CREATE_LANG_DOMAIN ), $newdomain ), 'debug');
@@ -427,6 +431,8 @@ class Incsub_Batch_Create_Creator {
 				$this->log( __( 'Error creating blog: ' . $newdomain . $path . ' - ' . $blog_id->get_error_message(), INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
 				return false;
 			}
+
+			do_action( 'batch_create_blog_created', $blog_id, $queue_item );
 
 			if ( ! is_super_admin( $admin_id ) && ! get_user_option( 'primary_blog', $admin_id ) )
 				update_user_option( $admin_id, 'primary_blog', $blog_id, true );
