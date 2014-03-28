@@ -99,6 +99,10 @@ class Incsub_Batch_Create {
 		// Admin Pages
 		require_once( INCSUB_BATCH_CREATE_ADMIN_DIR . 'pages/network-main-page.php' );
 		require_once( INCSUB_BATCH_CREATE_ADMIN_DIR . 'tables/queue-table.php' );
+
+		global $wpmudev_notices;
+		$wpmudev_notices[] = array( 'id'=> 84,'name'=> 'Batch Create', 'screens' => array( 'settings_page_batch-create-menu-network' ) );
+		include_once( 'externals/wpmudev-dash-notification.php' );
 	}
 
 	/**
@@ -148,7 +152,7 @@ class Incsub_Batch_Create {
 		global $wpdb;
 
 		require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'creator.php' );
-		
+
 		$wpdb->batch_create_queuemeta = $wpdb->base_prefix . 'batch_create_queuemeta';
 		
 		// A network menu

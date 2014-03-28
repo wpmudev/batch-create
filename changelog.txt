@@ -1,9 +1,15 @@
 Plugin Name: Batch Create
-Author: Andrew Billits, Ulrich Sossou
+Author: WPMUDEV
 
 Change Log:
 ----------------------------------------------------------------------
 ----------------------------------------------------------------------
+
+1.4 - 2014-03-28 Ignacio Cruz
+----------------------------------------------------------------------
+- Added: Pro Sites Integration
+- Added: New hooks.
+- Other minor improvements
 
 1.3.3 - 2013-09-30 Ignacio Cruz
 ----------------------------------------------------------------------
