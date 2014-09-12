@@ -75,7 +75,7 @@ class Batch_Create_Queue_Table extends WP_List_Table {
     function get_columns(){
         $columns = apply_filters( 'batch_create_queue_columns', array(
             'cb'                => '<input type="checkbox" />', //Render a checkbox instead of text
-            'blogname'          => __( 'Blog name', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
+            'blogname'          => __( 'Blog name/Blog ID', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
             'blogtitle'         => __( 'Blog title', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
             'username'          => __( 'Username', INCSUB_BATCH_CREATE_LANG_DOMAIN ),
             'userpass'          => __( 'User password', INCSUB_BATCH_CREATE_LANG_DOMAIN ),

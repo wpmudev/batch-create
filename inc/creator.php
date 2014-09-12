@@ -325,40 +325,51 @@ class Incsub_Batch_Create_Creator {
 			do_action( 'batch_create_after_create_user', $queue_item, $user_id );
 		}
 
+		$blog_id = false;
 
-		// DOMAIN
-		$domain = '';
-		if ( preg_match( '|^([a-zA-Z0-9-])+$|', $queue_item->batch_create_blog_name ) )
-			$domain = strtolower( $queue_item->batch_create_blog_name );
+		// We might have passed a blog ID instead of a domain
+		if ( is_numeric( $queue_item->batch_create_blog_name ) ) {
+			$blog_details = get_blog_details( $queue_item->batch_create_blog_name );
+			if ( ! empty( $blog_details->blog_id ) )
+				$blog_id = $blog_details->blog_id;
+		}
 
-		if ( ! is_subdomain_install() ) {
-			$subdirectory_reserved_names = apply_filters( 'subdirectory_reserved_names', array( 'page', 'comments', 'blog', 'files', 'feed' ) );
-			if ( in_array( $domain, $subdirectory_reserved_names ) ) {
-				$this->log( sprintf( __('The following words are reserved for use by WordPress functions and cannot be used as blog names: %s' ), implode( ', ', $subdirectory_reserved_names ) ) );
+		if ( ! $blog_id ) {
+			// DOMAIN
+			$domain = '';
+			if ( preg_match( '|^([a-zA-Z0-9-])+$|', $queue_item->batch_create_blog_name ) )
+				$domain = strtolower( $queue_item->batch_create_blog_name );
+
+			if ( ! is_subdomain_install() ) {
+				$subdirectory_reserved_names = apply_filters( 'subdirectory_reserved_names', array( 'page', 'comments', 'blog', 'files', 'feed' ) );
+				if ( in_array( $domain, $subdirectory_reserved_names ) ) {
+					$this->log( sprintf( __('The following words are reserved for use by WordPress functions and cannot be used as blog names: %s' ), implode( ', ', $subdirectory_reserved_names ) ) );
+					return false;
+				}
+			}
+
+			if ( empty( $domain ) ) {
+				$this->log( __( 'Missing or invalid site address.' ) );
 				return false;
 			}
+
+			if ( is_subdomain_install() ) {
+				$newdomain = $domain . '.' . preg_replace( '|^www\.|', '', $current_site->domain );
+				$path      = $current_site->path;
+			} else {
+				$newdomain = $current_site->domain;
+				$path      = $current_site->path . $domain . '/';
+			}
+
+
+			// BLOG
+			if ( in_array( $newdomain, array( '', 'null' ) ) ) {
+				$this->log(sprintf( 'Blog name is empty! Blog will NOT be created', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
+			}
+
+			$blog_id = get_id_from_blogname( $domain );
 		}
-
-		if ( empty( $domain ) ) {
-			$this->log( __( 'Missing or invalid site address.' ) );
-			return false;
-		}
-
-		if ( is_subdomain_install() ) {
-			$newdomain = $domain . '.' . preg_replace( '|^www\.|', '', $current_site->domain );
-			$path      = $current_site->path;
-		} else {
-			$newdomain = $current_site->domain;
-			$path      = $current_site->path . $domain . '/';
-		}
-
-
-		// BLOG
-		if ( in_array( $newdomain, array( '', 'null' ) ) ) {
-			$this->log(sprintf( 'Blog name is empty! Blog will NOT be created', INCSUB_BATCH_CREATE_LANG_DOMAIN ) );
-		}
-
-		$blog_id = get_id_from_blogname( $domain );
+		
 		$user_role = $queue_item->batch_create_user_role;
 		if( $blog_id ) { 
 

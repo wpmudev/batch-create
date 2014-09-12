@@ -5,7 +5,7 @@ Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: WPMU DEV
 Text Domain: batch_create
-Version: 1.4
+Version: 1.5
 Network: true
 Author URI: http://premium.wpmudev.org/
 WDP ID: 84
@@ -37,23 +37,8 @@ class Incsub_Batch_Create {
 
 		add_action( 'plugins_loaded', array( &$this, 'load_text_domain' ) );
 
-		add_action( 'admin_enqueue_scripts', array( &$this, 'enqueue_scripts' ) );
-		add_action( 'admin_enqueue_scripts', array( &$this, 'enqueue_styles' ) );
-
-		// We don't use the activation hook here
-		// As sometimes is not very helpful and
-		// we would need to check stuff to install not only when
-		// we activate the plugin
-		register_deactivation_hook( __FILE__, array( &$this, 'deactivate' ) );
-
 	}
 
-	public function enqueue_scripts() {
-	}
-
-
-	public function enqueue_styles() {
-	}
 
 
 
@@ -65,7 +50,7 @@ class Incsub_Batch_Create {
 		//TODO: Change the constant names
 
 		// Basics
-		define( 'INCSUB_BATCH_CREATE_VERSION', '1.4' );
+		define( 'INCSUB_BATCH_CREATE_VERSION', '1.5' );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 		define( 'INCSUB_BATCH_CREATE_PLUGIN_FILE_DIR', plugin_dir_path( __FILE__ ) . 'batch-create.php' );
@@ -111,6 +96,9 @@ class Incsub_Batch_Create {
 	public function maybe_upgrade() {
 		$current_version = get_site_option( self::$version_option_slug );
 
+		if ( $current_version == INCSUB_BATCH_CREATE_VERSION )
+			return;
+
 		if ( ! $current_version )
 			$current_version = '1.3.3'; // This is the first version that includes some upgradings
 
@@ -118,19 +106,11 @@ class Incsub_Batch_Create {
 		if ( version_compare( $current_version, '1.4', '<' ) ) {
 			require_once( INCSUB_BATCH_CREATE_INCLUDES_DIR . 'upgrade.php' );
 			batch_create_upgrade_14();
-			update_site_option( self::$version_option_slug, '1.4' );
 		}
 
-		//update_site_option( self::$version_option_slug, INCSUB_BATCH_CREATE_VERSION );
+		update_site_option( self::$version_option_slug, INCSUB_BATCH_CREATE_VERSION );
 	}
 
-	/**
-	 * Actions executed when the plugin is deactivated
-	 */
-	public function deactivate() {
-		// HEY! Do not delete anything from DB here
-		// You better use the uninstall functionality
-	}
 
 	/**
 	 * Load the plugin text domain and MO files
