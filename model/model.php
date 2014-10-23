@@ -13,11 +13,6 @@ class Incsub_Batch_Create_Model {
 
 	static $instance;
 
-	// This option will tell WP if the schema has been created
-	// Instead of using the activation hook, we'll use this
-	// TODO: Change slug
-	public $schema_created_option_slug = 'batch_create_installed';
-
 	// Tables names
 	private $queue;
 	private $queue_meta;
@@ -47,7 +42,6 @@ class Incsub_Batch_Create_Model {
 	protected function __construct() {
 		global $wpdb;
 
-		// TODO: Change tables names
 		$this->queue = $wpdb->base_prefix . 'batch_create_queue';
 		$this->queue_meta = $wpdb->base_prefix . 'batch_create_queuemeta';
 
@@ -57,13 +51,6 @@ class Incsub_Batch_Create_Model {
           $this->db_charset_collate = "DEFAULT CHARACTER SET $wpdb->charset";
         if ( ! empty($wpdb->collate) )
           $this->db_charset_collate .= " COLLATE $wpdb->collate";
-
-      	// Have we created the DB schema?
-      	if ( false === get_site_option( $this->schema_created_option_slug ) ) {
-      		$this->create_schema();
-
-      		update_site_option( $this->schema_created_option_slug, true );
-      	}
 	}
 
 	/**

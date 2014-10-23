@@ -37,6 +37,19 @@ class Incsub_Batch_Create {
 
 		add_action( 'plugins_loaded', array( &$this, 'load_text_domain' ) );
 
+		register_activation_hook( __FILE__, array( $this, 'activate' ) );
+		register_deactivation_hook( __FILE__, array( $this, 'deactivate' ) );
+
+	}
+
+	public function activate() {
+		$model = batch_create_get_model();
+		$model->create_schema();
+		update_site_option( self::$version_option_slug, INCSUB_BATCH_CREATE_VERSION );
+	}
+
+	public function deactivate() {
+		delete_site_option( self::$version_option_slug, INCSUB_BATCH_CREATE_VERSION );
 	}
 
 
@@ -96,11 +109,13 @@ class Incsub_Batch_Create {
 	public function maybe_upgrade() {
 		$current_version = get_site_option( self::$version_option_slug );
 
-		if ( $current_version == INCSUB_BATCH_CREATE_VERSION )
+		if ( $current_version === INCSUB_BATCH_CREATE_VERSION )
 			return;
 
-		if ( ! $current_version )
-			$current_version = '1.3.3'; // This is the first version that includes some upgradings
+		if ( $current_version === false ) {
+			$this->activate();
+			return;
+		}
 
 		// For the second version, we're just saving the version in DB
 		if ( version_compare( $current_version, '1.4', '<' ) ) {
