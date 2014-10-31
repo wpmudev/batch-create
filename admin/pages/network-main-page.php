@@ -6,7 +6,7 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
  		parent::__construct( $slug, $capability, $args );
 
  		add_action( 'admin_init', array( &$this, 'process_form' ) );
- 		add_action( 'batch_create_instructions', array( $this, 'render_instructions' ) );
+ 		add_action( 'batch_create_instructions', array( $this, 'render_instructions' ), 5 );
  	}
 
 	public function render_content() {
