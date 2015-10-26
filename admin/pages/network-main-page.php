@@ -236,6 +236,8 @@ class Batch_Create_Network_Main_Menu extends Origin_Admin_Page {
 	}
 
 	public function render_instructions() {
+		$test_xls_url = INCSUB_BATCH_CREATE_PLUGIN_URL . '/inc/test.xls';
+		$test_csv_url = INCSUB_BATCH_CREATE_PLUGIN_URL . '/inc/test.csv';
 		?>
 			<h3><?php _e( 'Instructions', INCSUB_BATCH_CREATE_LANG_DOMAIN ); ?></h3>
 			<p><?php _e( "Batch create is designed for quickly creating sites and/or usernames or adding users to an existing site in batches of 10's, 100's or 1000's by uploading a .xls file.", INCSUB_BATCH_CREATE_LANG_DOMAIN ); ?></p>

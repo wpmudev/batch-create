@@ -260,7 +260,7 @@ class Incsub_Batch_Create_Creator {
 	}
 
 	public function process_queue_item( $queue_item ) {
-		global $current_site;
+		global $current_site, $wp_version;
 
 		$this->log(
 			sprintf(
@@ -319,7 +319,7 @@ class Incsub_Batch_Create_Creator {
 			$send = apply_filters( 'batch_create_send_new_user_notification', $send, $user_id );
 
 			if ( $send )
-				wp_new_user_notification( $user_id, $password );
+				wpmu_welcome_user_notification( $user_id, $password );
 
 			$this->log( "User: $user_name created!" );
 			do_action( 'batch_create_after_create_user', $queue_item, $user_id );

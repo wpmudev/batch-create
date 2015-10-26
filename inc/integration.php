@@ -58,7 +58,7 @@ if ( is_plugin_active_for_network( 'pro-sites/pro-sites.php' ) ) {
 		}
 		if ( $column == 'extend' ) {
 			$extend = get_metadata( 'batch_create_queue', $item['batch_create_ID'], 'pro_site_extend', true );
-			$extend = $extend < 9999999999 ? date_i18n( get_option( 'date_format' ), $extend ) : __( 'Permanent', INCSUB_BATCH_CREATE_LANG_DOMAIN );
+			$extend = is_numeric( $extend ) && $extend < 9999999999 ? date_i18n( get_option( 'date_format' ), $extend ) : __( 'Permanent', INCSUB_BATCH_CREATE_LANG_DOMAIN );
 			return $extend;
 		}
 	}
