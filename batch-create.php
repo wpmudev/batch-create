@@ -4,7 +4,7 @@ Plugin Name: Batch Create
 Plugin URI: http://premium.wpmudev.org/project/batch-create
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: WPMU DEV
-Text Domain: batch_create
+Text Domain: incsub_batch_create
 Version: 1.5.1
 Network: true
 Author URI: http://premium.wpmudev.org/
@@ -49,7 +49,7 @@ class Incsub_Batch_Create {
 	}
 
 	public function deactivate() {
-		delete_site_option( self::$version_option_slug, INCSUB_BATCH_CREATE_VERSION );
+		delete_site_option( self::$version_option_slug );
 	}
 
 
@@ -134,10 +134,7 @@ class Incsub_Batch_Create {
 	 * or the plugin one
 	 */
 	public function load_text_domain() {
-		$locale = apply_filters( 'plugin_locale', get_locale(), INCSUB_BATCH_CREATE_LANG_DOMAIN );
-
-		load_textdomain( INCSUB_BATCH_CREATE_LANG_DOMAIN, WP_LANG_DIR . '/' . INCSUB_BATCH_CREATE_LANG_DOMAIN . '/' . INCSUB_BATCH_CREATE_LANG_DOMAIN . '-' . $locale . '.mo' );
-		load_plugin_textdomain( INCSUB_BATCH_CREATE_LANG_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/lang/' );
+		load_plugin_textdomain( INCSUB_BATCH_CREATE_LANG_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**

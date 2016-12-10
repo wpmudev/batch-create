@@ -39,7 +39,7 @@ if ( is_plugin_active_for_network( 'pro-sites/pro-sites.php' ) ) {
 
 		if ( $level && $extend ) {
 			$extend = $extend < 9999999999 ? $extend - time() : $extend;
-			$psts->extend( $blog_id, $extend, __('Manual', 'psts'), $level );
+			$psts->extend( $blog_id, $extend, __('Manual', INCSUB_BATCH_CREATE_LANG_DOMAIN), $level );
 		}
 	}
 	add_action( 'batch_create_blog_created', 'batch_create_set_pro_status', 10, 2 );

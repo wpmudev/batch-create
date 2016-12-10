@@ -135,7 +135,9 @@ class Incsub_Batch_Create_Model {
 
 		array_unshift( $args, $current_site->id );
 
-		$args[2] = iconv( "Windows-1252", "UTF-8", $args[2] );
+		if ( 'Windows-1252' === mb_detect_encoding( $args[ 2 ] ) ) {
+			$args[ 2 ] = iconv( "Windows-1252", "UTF-8", $args[2] );
+		}
 
 		$wpdb->insert(
 			$this->queue,
