@@ -406,10 +406,13 @@ class Incsub_Batch_Create_Creator {
 			// Create user blog and set Admin user, as a consequence.
 			// Since this is the case, if the user in the batch queue has any explicit roles
 			// OTHER then 'administrator', we'll assign current logged in user as new blog admin.
+            $retry_add_user = false;
 			if ( 'administrator' != $user_role && ! in_array( $user_role, array( '', 'null' ) ) ) {
 				$admin_user = get_userdata( get_current_user_id() );
 				$admin_id = $admin_user->ID;
 				$this->log( sprintf( 'New user is NOT administrator: using current user (%s) as admin instead', $admin_user->user_login ) );
+				// We've added another administrator but the user in the list must be added too once the blog is created
+				$retry_add_user = true;
 			} else {
 				$this->log( sprintf( __( 'New user is administrator', INCSUB_BATCH_CREATE_LANG_DOMAIN ) ) );
 				$admin_id = $user_id;
@@ -447,6 +450,10 @@ class Incsub_Batch_Create_Creator {
 
 			if ( ! is_super_admin( $admin_id ) && ! get_user_option( 'primary_blog', $admin_id ) )
 				update_user_option( $admin_id, 'primary_blog', $blog_id, true );
+
+			if ( $retry_add_user ) {
+			    add_user_to_blog( $blog_id, $user_id, $user_role );
+            }
 
 			$send = apply_filters( 'batch_create_send_welcome_notification', true, $blog_id );
 
