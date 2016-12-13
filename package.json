@@ -1,6 +1,6 @@
 {
   "name": "batch-create",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "main": "batch-create.php",
   "projectEditUrl": "https://premium.wpmudev.org/wp-admin/edit.php?post_type=project&page=projects-manage&manage_files=84",
   "description": "",

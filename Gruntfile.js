@@ -78,7 +78,7 @@ module.exports = function(grunt) {
             },
             dist: {
                 options: {
-                    potFilename: 'incsub_batch_create-default.pot',
+                    potFilename: 'incsub_batch_create.pot',
                     exclude: [
                         'tests/.*',
                         'node_modules/.*',
