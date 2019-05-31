@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Batch Create
-Plugin URI: http://premium.wpmudev.org/project/batch-create
+Plugin URI: https://github.com/wpmudev/batch-create/
 Description: Create hundred or thousands of blogs and users automatically by simply uploading a csv text file - subdomain and user creation automation has never been so easy.
 Author: WPMU DEV
 Text Domain: incsub_batch_create
